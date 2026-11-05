@@ -1,0 +1,430 @@
+{
+  "calls": [
+    {
+      "label": "initialize",
+      "method": "initialize",
+      "result": {
+        "capabilities": {
+          "resources": true,
+          "tools": true
+        },
+        "protocolVersion": "build-1",
+        "server": "file",
+        "transport": "stdio"
+      },
+      "seq": 1,
+      "server": "file",
+      "status": "success"
+    },
+    {
+      "label": "initialize",
+      "method": "initialize",
+      "result": {
+        "capabilities": {
+          "resources": true,
+          "tools": true
+        },
+        "protocolVersion": "build-1",
+        "server": "database",
+        "transport": "stdio"
+      },
+      "seq": 2,
+      "server": "database",
+      "status": "success"
+    },
+    {
+      "label": "initialize",
+      "method": "initialize",
+      "result": {
+        "capabilities": {
+          "resources": true,
+          "tools": true
+        },
+        "protocolVersion": "build-1",
+        "server": "calc",
+        "transport": "stdio"
+      },
+      "seq": 3,
+      "server": "calc",
+      "status": "success"
+    },
+    {
+      "label": "tools/list",
+      "method": "tools/list",
+      "result": {
+        "tools": [
+          {
+            "description": "Read one text file inside the sandbox.",
+            "inputSchema": {
+              "properties": {
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "type": "object"
+            },
+            "name": "read_file",
+            "server": "file"
+          },
+          {
+            "description": "List files inside the sandbox, sorted.",
+            "inputSchema": {
+              "properties": {},
+              "required": [],
+              "type": "object"
+            },
+            "name": "list_files",
+            "server": "file"
+          }
+        ]
+      },
+      "seq": 4,
+      "server": "file",
+      "status": "success"
+    },
+    {
+      "label": "tools/list",
+      "method": "tools/list",
+      "result": {
+        "tools": [
+          {
+            "description": "List every row of the items table, by id.",
+            "inputSchema": {
+              "properties": {},
+              "required": [],
+              "type": "object"
+            },
+            "name": "list_items",
+            "server": "database"
+          },
+          {
+            "description": "Run one read-only SELECT on the items table.",
+            "inputSchema": {
+              "properties": {
+                "sql": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sql"
+              ],
+              "type": "object"
+            },
+            "name": "run_query",
+            "server": "database"
+          }
+        ]
+      },
+      "seq": 5,
+      "server": "database",
+      "status": "success"
+    },
+    {
+      "label": "tools/list",
+      "method": "tools/list",
+      "result": {
+        "tools": [
+          {
+            "description": "Safe arithmetic: add, subtract, multiply, divide.",
+            "inputSchema": {
+              "properties": {
+                "a": {
+                  "type": "number"
+                },
+                "b": {
+                  "type": "number"
+                },
+                "op": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "op",
+                "a",
+                "b"
+              ],
+              "type": "object"
+            },
+            "name": "calculate",
+            "server": "calc"
+          },
+          {
+            "description": "Count whitespace separated words in a text.",
+            "inputSchema": {
+              "properties": {
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "text"
+              ],
+              "type": "object"
+            },
+            "name": "count_words",
+            "server": "calc"
+          }
+        ]
+      },
+      "seq": 6,
+      "server": "calc",
+      "status": "success"
+    },
+    {
+      "label": "read_file",
+      "method": "tools/call",
+      "result": {
+        "content": "hello mcp\n",
+        "path": "hello.txt"
+      },
+      "seq": 7,
+      "server": "file",
+      "status": "success"
+    },
+    {
+      "label": "list_files",
+      "method": "tools/call",
+      "result": {
+        "files": [
+          "guide.txt",
+          "hello.txt",
+          "notes.txt"
+        ]
+      },
+      "seq": 8,
+      "server": "file",
+      "status": "success"
+    },
+    {
+      "label": "list_items",
+      "method": "tools/call",
+      "result": {
+        "rows": [
+          {
+            "id": 1,
+            "name": "alpha",
+            "score": 10
+          },
+          {
+            "id": 2,
+            "name": "beta",
+            "score": 20
+          },
+          {
+            "id": 3,
+            "name": "gamma",
+            "score": 30
+          }
+        ]
+      },
+      "seq": 9,
+      "server": "database",
+      "status": "success"
+    },
+    {
+      "label": "run_query",
+      "method": "tools/call",
+      "result": {
+        "rows": [
+          {
+            "name": "beta",
+            "score": 20
+          },
+          {
+            "name": "gamma",
+            "score": 30
+          }
+        ]
+      },
+      "seq": 10,
+      "server": "database",
+      "status": "success"
+    },
+    {
+      "label": "calculate",
+      "method": "tools/call",
+      "result": {
+        "a": 20,
+        "b": 30,
+        "op": "add",
+        "value": 50
+      },
+      "seq": 11,
+      "server": "calc",
+      "status": "success"
+    },
+    {
+      "label": "count_words",
+      "method": "tools/call",
+      "result": {
+        "count": 3
+      },
+      "seq": 12,
+      "server": "calc",
+      "status": "success"
+    },
+    {
+      "label": "resources/read sandbox://notes.txt",
+      "method": "resources/read",
+      "result": {
+        "text": "tools need rules\n",
+        "uri": "sandbox://notes.txt"
+      },
+      "seq": 13,
+      "server": "file",
+      "status": "success"
+    },
+    {
+      "label": "resources/read db://items",
+      "method": "resources/read",
+      "result": {
+        "rows": [
+          {
+            "id": 1,
+            "name": "alpha",
+            "score": 10
+          },
+          {
+            "id": 2,
+            "name": "beta",
+            "score": 20
+          },
+          {
+            "id": 3,
+            "name": "gamma",
+            "score": 30
+          }
+        ],
+        "uri": "db://items"
+      },
+      "seq": 14,
+      "server": "database",
+      "status": "success"
+    },
+    {
+      "error_code": -32002,
+      "error_message": "path outside sandbox",
+      "error_reason": "path_traversal",
+      "label": "read_file",
+      "method": "tools/call",
+      "seq": 15,
+      "server": "file",
+      "status": "blocked"
+    },
+    {
+      "error_code": -32002,
+      "error_message": "path outside sandbox",
+      "error_reason": "path_traversal",
+      "label": "read_file",
+      "method": "tools/call",
+      "seq": 16,
+      "server": "file",
+      "status": "blocked"
+    },
+    {
+      "error_code": -32003,
+      "error_message": "only read-only SELECT is allowed",
+      "error_reason": "write_blocked",
+      "label": "run_query",
+      "method": "tools/call",
+      "seq": 17,
+      "server": "database",
+      "status": "blocked"
+    },
+    {
+      "error_code": -32003,
+      "error_message": "only read-only SELECT is allowed",
+      "error_reason": "write_blocked",
+      "label": "run_query",
+      "method": "tools/call",
+      "seq": 18,
+      "server": "database",
+      "status": "blocked"
+    },
+    {
+      "error_code": -32001,
+      "error_message": "unknown tool",
+      "error_reason": "tool_not_found",
+      "label": "delete_file",
+      "method": "tools/call",
+      "seq": 19,
+      "server": "file",
+      "status": "error"
+    },
+    {
+      "error_code": -32602,
+      "error_message": "sql must be a non-empty string",
+      "error_reason": "invalid_params",
+      "label": "run_query",
+      "method": "tools/call",
+      "seq": 20,
+      "server": "database",
+      "status": "error"
+    },
+    {
+      "error_code": -32004,
+      "error_message": "file not found",
+      "error_reason": "file_not_found",
+      "label": "read_file",
+      "method": "tools/call",
+      "seq": 21,
+      "server": "file",
+      "status": "error"
+    },
+    {
+      "error_code": -32601,
+      "error_message": "method not found",
+      "error_reason": "method_not_found",
+      "label": "bogus/method",
+      "method": "bogus/method",
+      "seq": 22,
+      "server": "file",
+      "status": "error"
+    },
+    {
+      "error_code": -32006,
+      "error_message": "division by zero",
+      "error_reason": "calc_error",
+      "label": "calculate",
+      "method": "tools/call",
+      "seq": 23,
+      "server": "calc",
+      "status": "error"
+    },
+    {
+      "error_code": -32004,
+      "error_message": "unknown server",
+      "error_reason": "server_not_found",
+      "label": "initialize",
+      "method": "initialize",
+      "seq": 24,
+      "server": "nope",
+      "status": "error"
+    }
+  ],
+  "summary": {
+    "blocked": 4,
+    "blocked_by_rule": {
+      "path_traversal": 2,
+      "write_blocked": 2
+    },
+    "errors": 6,
+    "servers": [
+      "calc",
+      "database",
+      "file"
+    ],
+    "successes": 14,
+    "tools_per_server": {
+      "calc": 2,
+      "database": 2,
+      "file": 2
+    },
+    "total_calls": 24,
+    "total_tools": 6,
+    "transport": "stdio"
+  }
+}
