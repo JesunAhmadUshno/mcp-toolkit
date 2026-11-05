@@ -2,8 +2,8 @@
 
 An MCP server and host toolkit with authentication and tool safety rules.
 
-Status: Learn DONE and Build DONE (2026-11-05, ROADMAP-V3-BATCH). Levels 1 and 2 are built, tested, and measured below. Deep is not started.
-Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. Both levels were run on the Muse VM (CPU); see the level READMEs for the named deduction.
+Status: Learn DONE, Build DONE, and Deep DONE (2026-11-05, ROADMAP-V3-BATCH). All three levels are built, tested, and measured below. Deep ships as v1.0; the rest of the v2 Deep scope is the v1.1 backlog in ROADMAP.md.
+Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. All levels were run on the Muse VM (CPU); see the level READMEs for the named deduction.
 
 ## Start here
 
@@ -47,6 +47,25 @@ Main claim: P09 mcp-toolkit Level 2 Build ran 24 protocol calls end to end over 
 | Build unit tests | 20 passed (37 in the full suite) |
 | Build grade | 8,600 of 10,000 |
 | Determinism | results_build.json identical across two runs, sha256 6e56a8d61e38 |
+
+Measured 2026-11-05 with level-3-deep/run_deep.py on the Muse VM, Python 3.12. The Deep implementation is an MCP-style protocol over real HTTP on localhost with bearer token authentication, not the official MCP SDK.
+
+Main claim: P09 mcp-toolkit Level 3 Deep ran 30 protocol calls over authenticated HTTP with 8 successes, 3 unauthenticated rejections, 2 role blocks, 13 safety blocks, and 4 errors, exposing 6 tools under 2 roles.
+
+| Test | Result |
+| --- | --- |
+| Deep protocol calls | 30 total |
+| Calls succeeded | 8 of 30 |
+| Unauthenticated rejections (HTTP 401) | 3 |
+| Role blocks (HTTP 403, forbidden_role) | 2 |
+| Calls blocked by safety rules | 13 (path_traversal 2, absolute_path_blocked 1, write_blocked 1, delete_blocked 1, sql_not_select 4, sql_multi_statement 2, request_too_large 1, unknown_tool 1) |
+| Calls returned named protocol errors | 4 |
+| Audit log entries | 18 (3 auth, 2 authorization, 13 safety) |
+| Tools exposed | 6 (reader sees 4, operator sees 6) |
+| Roles | 2 (reader, operator) |
+| Deep unit tests | 28 passed (65 in the full suite) |
+| Deep grade | 8,300 of 10,000 |
+| Determinism | results_deep.json identical across two runs, sha256 8c1d115e520e |
 
 ## Novelty
 
