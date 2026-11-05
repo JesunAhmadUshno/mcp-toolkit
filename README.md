@@ -2,8 +2,8 @@
 
 An MCP server and host toolkit with authentication and tool safety rules.
 
-Status: Learn DONE (2026-11-05, ROADMAP-V3-BATCH). Level 1 is built, tested, and measured below. Build and Deep are not started.
-Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. Learn was run on the Muse VM (CPU); see the level README for the named deduction.
+Status: Learn DONE and Build DONE (2026-11-05, ROADMAP-V3-BATCH). Levels 1 and 2 are built, tested, and measured below. Deep is not started.
+Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. Both levels were run on the Muse VM (CPU); see the level READMEs for the named deduction.
 
 ## Start here
 
@@ -31,6 +31,22 @@ Measured 2026-11-05 with level-1-learn/run_learn.py on the Muse VM, Python 3.12.
 | Tools aggregated by the host | 4 (file 2, database 2) |
 | Unit tests | 17 passed |
 | Determinism | results_learn.json identical across two runs (hash verified) |
+
+Measured 2026-11-05 with level-2-build/run_build.py on the Muse VM, Python 3.12. The Build implementation is an MCP-style protocol over stdio subprocess transport, not the official MCP SDK.
+
+Main claim: P09 mcp-toolkit Level 2 Build ran 24 protocol calls end to end over stdio subprocess transport with 14 successes, 4 blocked, and 6 errors, aggregating 6 tools across 3 servers.
+
+| Test | Result |
+| --- | --- |
+| Build protocol calls | 24 total |
+| Calls succeeded | 14 of 24 |
+| Calls blocked by safety rules | 4 (path_traversal 2, write_blocked 2) |
+| Calls returned named protocol errors | 6 |
+| Tools aggregated by the host | 6 (file 2, database 2, calc 2) |
+| Servers connected over stdio | 3 (file, database, calc) |
+| Build unit tests | 20 passed (37 in the full suite) |
+| Build grade | 8,600 of 10,000 |
+| Determinism | results_build.json identical across two runs, sha256 6e56a8d61e38 |
 
 ## Novelty
 
