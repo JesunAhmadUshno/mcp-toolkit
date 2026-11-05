@@ -1,0 +1,530 @@
+{
+  "audit_log": [
+    {
+      "category": "auth",
+      "reason": "unauthenticated",
+      "role": null,
+      "seq": 1,
+      "tool": "read_file"
+    },
+    {
+      "category": "auth",
+      "reason": "unauthenticated",
+      "role": null,
+      "seq": 2,
+      "tool": "read_file"
+    },
+    {
+      "category": "auth",
+      "reason": "unauthenticated",
+      "role": null,
+      "seq": 3,
+      "tool": null
+    },
+    {
+      "category": "authorization",
+      "reason": "forbidden_role",
+      "role": "reader",
+      "seq": 4,
+      "tool": "calculate"
+    },
+    {
+      "category": "authorization",
+      "reason": "forbidden_role",
+      "role": "reader",
+      "seq": 5,
+      "tool": "count_words"
+    },
+    {
+      "category": "safety",
+      "reason": "path_traversal",
+      "role": "operator",
+      "seq": 6,
+      "tool": "read_file"
+    },
+    {
+      "category": "safety",
+      "reason": "path_traversal",
+      "role": "reader",
+      "seq": 7,
+      "tool": "read_file"
+    },
+    {
+      "category": "safety",
+      "reason": "absolute_path_blocked",
+      "role": "reader",
+      "seq": 8,
+      "tool": "read_file"
+    },
+    {
+      "category": "safety",
+      "reason": "write_blocked",
+      "role": "operator",
+      "seq": 9,
+      "tool": "write_file"
+    },
+    {
+      "category": "safety",
+      "reason": "delete_blocked",
+      "role": "operator",
+      "seq": 10,
+      "tool": "delete_file"
+    },
+    {
+      "category": "safety",
+      "reason": "sql_not_select",
+      "role": "reader",
+      "seq": 11,
+      "tool": "run_query"
+    },
+    {
+      "category": "safety",
+      "reason": "sql_not_select",
+      "role": "reader",
+      "seq": 12,
+      "tool": "run_query"
+    },
+    {
+      "category": "safety",
+      "reason": "sql_not_select",
+      "role": "reader",
+      "seq": 13,
+      "tool": "run_query"
+    },
+    {
+      "category": "safety",
+      "reason": "sql_not_select",
+      "role": "reader",
+      "seq": 14,
+      "tool": "run_query"
+    },
+    {
+      "category": "safety",
+      "reason": "sql_multi_statement",
+      "role": "reader",
+      "seq": 15,
+      "tool": "run_query"
+    },
+    {
+      "category": "safety",
+      "reason": "sql_multi_statement",
+      "role": "reader",
+      "seq": 16,
+      "tool": "run_query"
+    },
+    {
+      "category": "safety",
+      "reason": "request_too_large",
+      "role": null,
+      "seq": 17,
+      "tool": null
+    },
+    {
+      "category": "safety",
+      "reason": "unknown_tool",
+      "role": "operator",
+      "seq": 18,
+      "tool": "frobnicate"
+    }
+  ],
+  "calls": [
+    {
+      "http_status": 200,
+      "label": "initialize",
+      "result": {
+        "capabilities": {
+          "tools": true
+        },
+        "protocolVersion": "deep-1",
+        "role": "reader",
+        "server": "mcp-toolkit-deep",
+        "transport": "http"
+      },
+      "role": "reader",
+      "seq": 1,
+      "status": "success"
+    },
+    {
+      "http_status": 200,
+      "label": "tools/list",
+      "result": {
+        "tools": [
+          {
+            "description": "Read one text file inside the sandbox.",
+            "inputSchema": {
+              "properties": {
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "type": "object"
+            },
+            "name": "read_file",
+            "server": "file"
+          },
+          {
+            "description": "List files inside the sandbox, sorted.",
+            "inputSchema": {
+              "properties": {},
+              "required": [],
+              "type": "object"
+            },
+            "name": "list_files",
+            "server": "file"
+          },
+          {
+            "description": "List every row of the items table, by id.",
+            "inputSchema": {
+              "properties": {},
+              "required": [],
+              "type": "object"
+            },
+            "name": "list_items",
+            "server": "database"
+          },
+          {
+            "description": "Run one read-only SELECT on the items table.",
+            "inputSchema": {
+              "properties": {
+                "sql": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sql"
+              ],
+              "type": "object"
+            },
+            "name": "run_query",
+            "server": "database"
+          }
+        ]
+      },
+      "role": "reader",
+      "seq": 2,
+      "status": "success"
+    },
+    {
+      "http_status": 200,
+      "label": "read_file",
+      "result": {
+        "content": "hello mcp\n",
+        "path": "hello.txt"
+      },
+      "role": "reader",
+      "seq": 3,
+      "status": "success"
+    },
+    {
+      "http_status": 200,
+      "label": "list_files",
+      "result": {
+        "files": [
+          "guide.txt",
+          "hello.txt",
+          "notes.txt"
+        ]
+      },
+      "role": "reader",
+      "seq": 4,
+      "status": "success"
+    },
+    {
+      "http_status": 200,
+      "label": "list_items",
+      "result": {
+        "rows": [
+          {
+            "id": 1,
+            "name": "alpha",
+            "score": 10
+          },
+          {
+            "id": 2,
+            "name": "beta",
+            "score": 20
+          },
+          {
+            "id": 3,
+            "name": "gamma",
+            "score": 30
+          }
+        ]
+      },
+      "role": "reader",
+      "seq": 5,
+      "status": "success"
+    },
+    {
+      "http_status": 200,
+      "label": "run_query",
+      "result": {
+        "rows": [
+          {
+            "name": "beta",
+            "score": 20
+          },
+          {
+            "name": "gamma",
+            "score": 30
+          }
+        ]
+      },
+      "role": "reader",
+      "seq": 6,
+      "status": "success"
+    },
+    {
+      "http_status": 200,
+      "label": "calculate",
+      "result": {
+        "a": 20,
+        "b": 30,
+        "op": "add",
+        "value": 50
+      },
+      "role": "operator",
+      "seq": 7,
+      "status": "success"
+    },
+    {
+      "http_status": 200,
+      "label": "count_words",
+      "result": {
+        "count": 3
+      },
+      "role": "operator",
+      "seq": 8,
+      "status": "success"
+    },
+    {
+      "error_code": -32010,
+      "error_reason": "unauthenticated",
+      "http_status": 401,
+      "label": "read_file",
+      "role": "none",
+      "seq": 9,
+      "status": "unauthenticated"
+    },
+    {
+      "error_code": -32010,
+      "error_reason": "unauthenticated",
+      "http_status": 401,
+      "label": "read_file",
+      "role": "wrong",
+      "seq": 10,
+      "status": "unauthenticated"
+    },
+    {
+      "error_code": -32010,
+      "error_reason": "unauthenticated",
+      "http_status": 401,
+      "label": "initialize",
+      "role": "none",
+      "seq": 11,
+      "status": "unauthenticated"
+    },
+    {
+      "error_code": -32011,
+      "error_reason": "forbidden_role",
+      "http_status": 403,
+      "label": "calculate",
+      "role": "reader",
+      "seq": 12,
+      "status": "role_blocked"
+    },
+    {
+      "error_code": -32011,
+      "error_reason": "forbidden_role",
+      "http_status": 403,
+      "label": "count_words",
+      "role": "reader",
+      "seq": 13,
+      "status": "role_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "path_traversal",
+      "http_status": 200,
+      "label": "read_file",
+      "role": "operator",
+      "seq": 14,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "path_traversal",
+      "http_status": 200,
+      "label": "read_file",
+      "role": "reader",
+      "seq": 15,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "absolute_path_blocked",
+      "http_status": 200,
+      "label": "read_file",
+      "role": "reader",
+      "seq": 16,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "write_blocked",
+      "http_status": 200,
+      "label": "write_file",
+      "role": "operator",
+      "seq": 17,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "delete_blocked",
+      "http_status": 200,
+      "label": "delete_file",
+      "role": "operator",
+      "seq": 18,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "label": "run_query",
+      "role": "reader",
+      "seq": 19,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "label": "run_query",
+      "role": "reader",
+      "seq": 20,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "label": "run_query",
+      "role": "reader",
+      "seq": 21,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "label": "run_query",
+      "role": "reader",
+      "seq": 22,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "sql_multi_statement",
+      "http_status": 200,
+      "label": "run_query",
+      "role": "reader",
+      "seq": 23,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "sql_multi_statement",
+      "http_status": 200,
+      "label": "run_query",
+      "role": "reader",
+      "seq": 24,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32013,
+      "error_reason": "request_too_large",
+      "http_status": 413,
+      "label": "count_words",
+      "role": "operator",
+      "seq": 25,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32012,
+      "error_reason": "unknown_tool",
+      "http_status": 200,
+      "label": "frobnicate",
+      "role": "operator",
+      "seq": 26,
+      "status": "safety_blocked"
+    },
+    {
+      "error_code": -32004,
+      "error_reason": "file_not_found",
+      "http_status": 200,
+      "label": "read_file",
+      "role": "reader",
+      "seq": 27,
+      "status": "error"
+    },
+    {
+      "error_code": -32006,
+      "error_reason": "calc_error",
+      "http_status": 200,
+      "label": "calculate",
+      "role": "operator",
+      "seq": 28,
+      "status": "error"
+    },
+    {
+      "error_code": -32601,
+      "error_reason": "method_not_found",
+      "http_status": 200,
+      "label": "bogus/method",
+      "role": "operator",
+      "seq": 29,
+      "status": "error"
+    },
+    {
+      "error_code": -32602,
+      "error_reason": "invalid_params",
+      "http_status": 200,
+      "label": "run_query",
+      "role": "reader",
+      "seq": 30,
+      "status": "error"
+    }
+  ],
+  "summary": {
+    "audit_entries": 18,
+    "endpoint": "POST /mcp",
+    "errors": 4,
+    "operator_tools": 6,
+    "reader_tools": 4,
+    "role_blocked": 2,
+    "roles": [
+      "reader",
+      "operator"
+    ],
+    "safety_blocked": 13,
+    "safety_by_reason": {
+      "absolute_path_blocked": 1,
+      "delete_blocked": 1,
+      "path_traversal": 2,
+      "request_too_large": 1,
+      "sql_multi_statement": 2,
+      "sql_not_select": 4,
+      "unknown_tool": 1,
+      "write_blocked": 1
+    },
+    "successes": 8,
+    "total_calls": 30,
+    "total_tools": 6,
+    "transport": "http",
+    "unauthenticated": 3
+  }
+}
