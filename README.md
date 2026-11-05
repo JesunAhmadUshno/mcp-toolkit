@@ -2,8 +2,8 @@
 
 An MCP server and host toolkit with authentication and tool safety rules.
 
-Status: SCAFFOLD (Wave 0, ROADMAP-V3-BATCH, 2026-11-04). Scaffold is not built. No results exist yet.
-Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4.
+Status: Learn DONE (2026-11-05, ROADMAP-V3-BATCH). Level 1 is built, tested, and measured below. Build and Deep are not started.
+Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. Learn was run on the Muse VM (CPU); see the level README for the named deduction.
 
 ## Start here
 
@@ -20,9 +20,17 @@ Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4.
 
 ## Benchmarks
 
+Measured 2026-11-05 with level-1-learn/run_learn.py on the Muse VM, Python 3.12. The implementation is an in-process MCP-style teaching protocol, not the official MCP SDK.
+
 | Test | Result |
 | --- | --- |
-| NO RESULTS YET | No measurement has run. This table fills only with measured numbers, with method. |
+| Learn protocol calls | 18 total |
+| Calls succeeded | 10 of 18 |
+| Calls blocked by safety rules | 4 (path_traversal 2, write_blocked 2) |
+| Calls returned named protocol errors | 4 |
+| Tools aggregated by the host | 4 (file 2, database 2) |
+| Unit tests | 17 passed |
+| Determinism | results_learn.json identical across two runs (hash verified) |
 
 ## Novelty
 
