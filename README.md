@@ -22,7 +22,7 @@ Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. All levels were run on the M
 
 ## Measured results
 
-These are deterministic correctness traces of protocol calls, not performance benchmarks: no latency, throughput, or concurrency is measured.
+The call tables are deterministic correctness traces of protocol calls, not performance benchmarks. A separate small localhost latency measurement, machine specific and not deterministic, follows the guard corpus at the end of this section.
 
 Measured 2026-11-05 with level-1-learn/run_learn.py on the Muse VM, Python 3.12. The implementation is an in-process MCP-style teaching protocol, not the official MCP SDK.
 
@@ -80,6 +80,17 @@ Guard corpus, measured 2026-11-07 with level-3-deep/guard_corpus.py (CPU, under 
 | Deep plan replay | the 30 inputs in level-3-deep/deep_plan.json, replayed over HTTP, match results_deep.json call for call |
 
 False positives on SQL: a read-only CTE (WITH ... SELECT), the word drop inside a string literal, the replace() function, a leading comment, and a semicolon inside a comment. False negatives on SQL: reads of sqlite_master (directly and through UNION), an expensive randomblob() call, and a load_extension() call. The path false positive is sub/../hello.txt, which stays inside the sandbox but is blocked by the strict .. rule. The corpus is small and hand-labelled, so these are counts on these cases, not rates for real traffic.
+
+Latency, measured 2026-11-07 with level-3-deep/bench_latency.py on a Linux aarch64 machine (20 CPUs, Python 3.12.3), not the fleet node. Localhost loopback and tiny fixtures, so this is framework overhead, not a deployment benchmark; results_latency.json records the machine and differs between runs.
+
+| Request kind (300 sequential calls each) | Median | p95 |
+| --- | --- | --- |
+| calculate_role_blocked | 0.634 ms | 0.876 ms |
+| read_file_allowed | 0.573 ms | 0.921 ms |
+| read_file_path_traversal | 0.528 ms | 0.842 ms |
+| run_query_select | 0.579 ms | 0.876 ms |
+| unauthenticated | 0.632 ms | 0.876 ms |
+| 8 threads, 800 read_file calls | 624.7 calls/s | wall 1.281 s |
 
 ## Novelty
 

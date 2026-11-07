@@ -1,0 +1,44 @@
+{
+  "concurrent": {
+    "calls": 800,
+    "calls_per_s": 624.7,
+    "threads": 8,
+    "tool": "read_file",
+    "wall_s": 1.281
+  },
+  "machine": {
+    "cpu_count": 20,
+    "machine": "aarch64",
+    "python": "3.12.3",
+    "system": "Linux"
+  },
+  "measured": "2026-11-07",
+  "note": "machine specific, localhost loopback, tiny fixtures, not the fleet node",
+  "sequential": {
+    "calculate_role_blocked": {
+      "calls": 300,
+      "median_ms": 0.634,
+      "p95_ms": 0.876
+    },
+    "read_file_allowed": {
+      "calls": 300,
+      "median_ms": 0.573,
+      "p95_ms": 0.921
+    },
+    "read_file_path_traversal": {
+      "calls": 300,
+      "median_ms": 0.528,
+      "p95_ms": 0.842
+    },
+    "run_query_select": {
+      "calls": 300,
+      "median_ms": 0.579,
+      "p95_ms": 0.876
+    },
+    "unauthenticated": {
+      "calls": 300,
+      "median_ms": 0.632,
+      "p95_ms": 0.876
+    }
+  }
+}
