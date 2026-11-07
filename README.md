@@ -2,6 +2,8 @@
 
 An MCP server and host toolkit with authentication and tool safety rules.
 
+Live dashboard: https://jesunahmadushno.github.io/mcp-toolkit/ (built from the committed results files in this repo; the safety rule playground runs a JavaScript port of the Deep guard in your browser, checked against the recorded runs at build time).
+
 Status: Learn DONE, Build DONE, and Deep DONE (2026-11-05, ROADMAP-V3-BATCH). All three levels are built, tested, and measured below. Deep ships as v1.0; the rest of the v2 Deep scope is the v1.1 backlog in ROADMAP.md.
 Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. All levels were run on the Muse VM (CPU); see the level READMEs for the named deduction.
 
@@ -18,7 +20,9 @@ Project: P09. Fleet node: BlackBoxV2. Wave: Wave 4. All levels were run on the M
 - Level 2, Build: a real working system other people can run.
 - Level 3, Deep: benchmarks, optimization, evaluation, hard cases.
 
-## Benchmarks
+## Measured results
+
+These are deterministic correctness traces of protocol calls, not performance benchmarks: no latency, throughput, or concurrency is measured.
 
 Measured 2026-11-05 with level-1-learn/run_learn.py on the Muse VM, Python 3.12. The implementation is an in-process MCP-style teaching protocol, not the official MCP SDK.
 
@@ -66,6 +70,16 @@ Main claim: P09 mcp-toolkit Level 3 Deep ran 30 protocol calls over authenticate
 | Deep unit tests | 28 passed (65 in the full suite) |
 | Deep grade | 8,300 of 10,000 |
 | Determinism | results_deep.json identical across two runs, sha256 8c1d115e520e |
+
+Guard corpus, measured 2026-11-07 with level-3-deep/guard_corpus.py (CPU, under 1 second). It runs the Deep SQL guard and the read_file path rules over a labelled list of benign and malicious inputs and writes level-3-deep/results_guard.json. Labels follow the tool contracts: run_query is one read-only SELECT on the items table, read_file is one file inside the sandbox. SQL cases are checked by the guard only, never executed.
+
+| Guard | Result |
+| --- | --- |
+| SQL guard (_check_sql) | 22 cases: 5 false positives, 4 false negatives |
+| Path rules (read_file) | 17 cases: 1 false positive, 0 false negatives |
+| Deep plan replay | the 30 inputs in level-3-deep/deep_plan.json, replayed over HTTP, match results_deep.json call for call |
+
+False positives on SQL: a read-only CTE (WITH ... SELECT), the word drop inside a string literal, the replace() function, a leading comment, and a semicolon inside a comment. False negatives on SQL: reads of sqlite_master (directly and through UNION), an expensive randomblob() call, and a load_extension() call. The path false positive is sub/../hello.txt, which stays inside the sandbox but is blocked by the strict .. rule. The corpus is small and hand-labelled, so these are counts on these cases, not rates for real traffic.
 
 ## Novelty
 
