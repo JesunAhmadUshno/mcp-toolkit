@@ -1,0 +1,283 @@
+[
+  {
+    "call": "D01",
+    "method": "initialize",
+    "request_id": 1,
+    "token": "reader"
+  },
+  {
+    "call": "D02",
+    "method": "tools/list",
+    "request_id": 2,
+    "token": "reader"
+  },
+  {
+    "arguments": {
+      "path": "hello.txt"
+    },
+    "call": "D03",
+    "method": "tools/call",
+    "request_id": 3,
+    "token": "reader",
+    "tool": "read_file"
+  },
+  {
+    "arguments": {},
+    "call": "D04",
+    "method": "tools/call",
+    "request_id": 4,
+    "token": "reader",
+    "tool": "list_files"
+  },
+  {
+    "arguments": {},
+    "call": "D05",
+    "method": "tools/call",
+    "request_id": 5,
+    "token": "reader",
+    "tool": "list_items"
+  },
+  {
+    "arguments": {
+      "sql": "SELECT name, score FROM items WHERE score >= 20 ORDER BY id"
+    },
+    "call": "D06",
+    "method": "tools/call",
+    "request_id": 6,
+    "token": "reader",
+    "tool": "run_query"
+  },
+  {
+    "arguments": {
+      "a": 20,
+      "b": 30,
+      "op": "add"
+    },
+    "call": "D07",
+    "method": "tools/call",
+    "request_id": 7,
+    "token": "operator",
+    "tool": "calculate"
+  },
+  {
+    "arguments": {
+      "text": "tools need rules"
+    },
+    "call": "D08",
+    "method": "tools/call",
+    "request_id": 8,
+    "token": "operator",
+    "tool": "count_words"
+  },
+  {
+    "arguments": {
+      "path": "hello.txt"
+    },
+    "call": "D09",
+    "method": "tools/call",
+    "request_id": 9,
+    "token": "none",
+    "tool": "read_file"
+  },
+  {
+    "arguments": {
+      "path": "hello.txt"
+    },
+    "call": "D10",
+    "method": "tools/call",
+    "request_id": 10,
+    "token": "wrong",
+    "tool": "read_file"
+  },
+  {
+    "call": "D11",
+    "method": "initialize",
+    "request_id": 11,
+    "token": "none"
+  },
+  {
+    "arguments": {
+      "a": 1,
+      "b": 2,
+      "op": "add"
+    },
+    "call": "D12",
+    "method": "tools/call",
+    "request_id": 12,
+    "token": "reader",
+    "tool": "calculate"
+  },
+  {
+    "arguments": {
+      "text": "tools need rules"
+    },
+    "call": "D13",
+    "method": "tools/call",
+    "request_id": 13,
+    "token": "reader",
+    "tool": "count_words"
+  },
+  {
+    "arguments": {
+      "path": "../secret.txt"
+    },
+    "call": "D14",
+    "method": "tools/call",
+    "request_id": 14,
+    "token": "operator",
+    "tool": "read_file"
+  },
+  {
+    "arguments": {
+      "path": "../../etc/passwd"
+    },
+    "call": "D15",
+    "method": "tools/call",
+    "request_id": 15,
+    "token": "reader",
+    "tool": "read_file"
+  },
+  {
+    "arguments": {
+      "path": "/etc/passwd"
+    },
+    "call": "D16",
+    "method": "tools/call",
+    "request_id": 16,
+    "token": "reader",
+    "tool": "read_file"
+  },
+  {
+    "arguments": {
+      "content": "x",
+      "path": "hello.txt"
+    },
+    "call": "D17",
+    "method": "tools/call",
+    "request_id": 17,
+    "token": "operator",
+    "tool": "write_file"
+  },
+  {
+    "arguments": {
+      "path": "hello.txt"
+    },
+    "call": "D18",
+    "method": "tools/call",
+    "request_id": 18,
+    "token": "operator",
+    "tool": "delete_file"
+  },
+  {
+    "arguments": {
+      "sql": "DROP TABLE items"
+    },
+    "call": "D19",
+    "method": "tools/call",
+    "request_id": 19,
+    "token": "reader",
+    "tool": "run_query"
+  },
+  {
+    "arguments": {
+      "sql": "DELETE FROM items WHERE id = 1"
+    },
+    "call": "D20",
+    "method": "tools/call",
+    "request_id": 20,
+    "token": "reader",
+    "tool": "run_query"
+  },
+  {
+    "arguments": {
+      "sql": "UPDATE items SET score = 0 WHERE id = 1"
+    },
+    "call": "D21",
+    "method": "tools/call",
+    "request_id": 21,
+    "token": "reader",
+    "tool": "run_query"
+  },
+  {
+    "arguments": {
+      "sql": "INSERT INTO items VALUES (4, 'delta', 40)"
+    },
+    "call": "D22",
+    "method": "tools/call",
+    "request_id": 22,
+    "token": "reader",
+    "tool": "run_query"
+  },
+  {
+    "arguments": {
+      "sql": "SELECT id FROM items; SELECT id FROM items"
+    },
+    "call": "D23",
+    "method": "tools/call",
+    "request_id": 23,
+    "token": "reader",
+    "tool": "run_query"
+  },
+  {
+    "arguments": {
+      "sql": "SELECT id FROM items; DROP TABLE items"
+    },
+    "call": "D24",
+    "method": "tools/call",
+    "request_id": 24,
+    "token": "reader",
+    "tool": "run_query"
+  },
+  {
+    "call": "D25",
+    "method": "tools/call",
+    "oversize_repeat": 5000,
+    "request_id": 90,
+    "token": "operator",
+    "tool": "count_words"
+  },
+  {
+    "arguments": {},
+    "call": "D26",
+    "method": "tools/call",
+    "request_id": 26,
+    "token": "operator",
+    "tool": "frobnicate"
+  },
+  {
+    "arguments": {
+      "path": "missing.txt"
+    },
+    "call": "D27",
+    "method": "tools/call",
+    "request_id": 27,
+    "token": "reader",
+    "tool": "read_file"
+  },
+  {
+    "arguments": {
+      "a": 10,
+      "b": 0,
+      "op": "divide"
+    },
+    "call": "D28",
+    "method": "tools/call",
+    "request_id": 28,
+    "token": "operator",
+    "tool": "calculate"
+  },
+  {
+    "call": "D29",
+    "method": "bogus/method",
+    "request_id": 29,
+    "token": "operator"
+  },
+  {
+    "arguments": {},
+    "call": "D30",
+    "method": "tools/call",
+    "request_id": 30,
+    "token": "reader",
+    "tool": "run_query"
+  }
+]
