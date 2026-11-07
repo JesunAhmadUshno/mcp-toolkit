@@ -14,4 +14,6 @@ Against the MCP reference servers: this project aims to differ in the way its SP
 
 ## Honest size
 
-If the novelty proves small, this file will say so and name the real value instead (a cleaner reproduction, a better benchmark, a first public dataset). No novelty is invented to fill this section.
+Updated 2026-11-07. No measured difference against the MCP reference servers exists yet: no official MCP client or SDK has been connected (ROADMAP v1.1 item 4), so no interop or comparison claim is made.
+
+The real current value is smaller and concrete: a clean, stdlib-only reproduction of an MCP-style protocol at three levels (in-process, stdio, authenticated HTTP), with a named and tested safety rule set (8 block reasons, each with an audit entry), deterministic per-call traces, written failure modes, and a small labelled guard corpus (level-3-deep/results_guard.json) that measures where the SQL guard and path rules are wrong. That is a teaching and evaluation artifact, not a novel protocol or a novel defence.
