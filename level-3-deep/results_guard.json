@@ -1,0 +1,519 @@
+{
+  "deep_replay": [
+    {
+      "call": "D01",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D02",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D03",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D04",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D05",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D06",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D07",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D08",
+      "error_reason": null,
+      "http_status": 200,
+      "status": "success"
+    },
+    {
+      "call": "D09",
+      "error_reason": "unauthenticated",
+      "http_status": 401,
+      "status": "unauthenticated"
+    },
+    {
+      "call": "D10",
+      "error_reason": "unauthenticated",
+      "http_status": 401,
+      "status": "unauthenticated"
+    },
+    {
+      "call": "D11",
+      "error_reason": "unauthenticated",
+      "http_status": 401,
+      "status": "unauthenticated"
+    },
+    {
+      "call": "D12",
+      "error_reason": "forbidden_role",
+      "http_status": 403,
+      "status": "role_blocked"
+    },
+    {
+      "call": "D13",
+      "error_reason": "forbidden_role",
+      "http_status": 403,
+      "status": "role_blocked"
+    },
+    {
+      "call": "D14",
+      "error_reason": "path_traversal",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D15",
+      "error_reason": "path_traversal",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D16",
+      "error_reason": "absolute_path_blocked",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D17",
+      "error_reason": "write_blocked",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D18",
+      "error_reason": "delete_blocked",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D19",
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D20",
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D21",
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D22",
+      "error_reason": "sql_not_select",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D23",
+      "error_reason": "sql_multi_statement",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D24",
+      "error_reason": "sql_multi_statement",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D25",
+      "error_reason": "request_too_large",
+      "http_status": 413,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D26",
+      "error_reason": "unknown_tool",
+      "http_status": 200,
+      "status": "safety_blocked"
+    },
+    {
+      "call": "D27",
+      "error_reason": "file_not_found",
+      "http_status": 200,
+      "status": "error"
+    },
+    {
+      "call": "D28",
+      "error_reason": "calc_error",
+      "http_status": 200,
+      "status": "error"
+    },
+    {
+      "call": "D29",
+      "error_reason": "method_not_found",
+      "http_status": 200,
+      "status": "error"
+    },
+    {
+      "call": "D30",
+      "error_reason": "invalid_params",
+      "http_status": 200,
+      "status": "error"
+    }
+  ],
+  "path": [
+    {
+      "id": "P01",
+      "intended": "allow",
+      "note": "plain fixture",
+      "outcome": "true_negative",
+      "path": "hello.txt",
+      "verdict": "allowed"
+    },
+    {
+      "id": "P02",
+      "intended": "allow",
+      "note": "dot segment",
+      "outcome": "true_negative",
+      "path": "./notes.txt",
+      "verdict": "allowed"
+    },
+    {
+      "id": "P03",
+      "intended": "allow",
+      "note": "trailing slash",
+      "outcome": "true_negative",
+      "path": "guide.txt/",
+      "verdict": "allowed"
+    },
+    {
+      "id": "P04",
+      "intended": "allow",
+      "note": "missing file stays inside",
+      "outcome": "true_negative",
+      "path": "missing.txt",
+      "verdict": "file_not_found"
+    },
+    {
+      "id": "P05",
+      "intended": "allow",
+      "note": "absolute path inside the sandbox",
+      "outcome": "true_negative",
+      "path": "{SANDBOX}/hello.txt",
+      "verdict": "allowed"
+    },
+    {
+      "id": "P06",
+      "intended": "allow",
+      "note": "URL-encoded dots are not decoded, so it is a literal name",
+      "outcome": "true_negative",
+      "path": "%2e%2e/secret.txt",
+      "verdict": "file_not_found"
+    },
+    {
+      "id": "P07",
+      "intended": "allow",
+      "note": "no home expansion, literal name",
+      "outcome": "true_negative",
+      "path": "~/.ssh/id_rsa",
+      "verdict": "file_not_found"
+    },
+    {
+      "id": "P08",
+      "intended": "allow",
+      "note": "backslashes are literal characters on POSIX",
+      "outcome": "true_negative",
+      "path": "\\etc\\passwd",
+      "verdict": "file_not_found"
+    },
+    {
+      "id": "P09",
+      "intended": "allow",
+      "note": "the sandbox root is not a file",
+      "outcome": "true_negative",
+      "path": ".",
+      "verdict": "file_not_found"
+    },
+    {
+      "id": "P10",
+      "intended": "allow",
+      "note": "a .. segment that stays inside",
+      "outcome": "false_positive",
+      "path": "sub/../hello.txt",
+      "verdict": "path_traversal"
+    },
+    {
+      "id": "P11",
+      "intended": "block",
+      "note": "parent directory",
+      "outcome": "true_positive",
+      "path": "../secret.txt",
+      "verdict": "path_traversal"
+    },
+    {
+      "id": "P12",
+      "intended": "block",
+      "note": "backslash parent directory",
+      "outcome": "true_positive",
+      "path": "..\\secret.txt",
+      "verdict": "path_traversal"
+    },
+    {
+      "id": "P13",
+      "intended": "block",
+      "note": "escape after a real name",
+      "outcome": "true_positive",
+      "path": "hello.txt/../../etc/passwd",
+      "verdict": "path_traversal"
+    },
+    {
+      "id": "P14",
+      "intended": "block",
+      "note": "absolute path outside",
+      "outcome": "true_positive",
+      "path": "/etc/passwd",
+      "verdict": "absolute_path_blocked"
+    },
+    {
+      "id": "P15",
+      "intended": "block",
+      "note": "filesystem root",
+      "outcome": "true_positive",
+      "path": "/",
+      "verdict": "absolute_path_blocked"
+    },
+    {
+      "id": "P16",
+      "intended": "block",
+      "note": "sibling directory sharing the sandbox prefix",
+      "outcome": "true_positive",
+      "path": "{SANDBOX}x/hello.txt",
+      "verdict": "absolute_path_blocked"
+    },
+    {
+      "id": "P17",
+      "intended": "block",
+      "note": "absolute path that climbs out",
+      "outcome": "true_positive",
+      "path": "{SANDBOX}/../secret.txt",
+      "verdict": "path_traversal"
+    }
+  ],
+  "sandbox_placeholder": "{SANDBOX}",
+  "sql": [
+    {
+      "id": "S01",
+      "intended": "allow",
+      "note": "the recorded D06 query",
+      "outcome": "true_negative",
+      "sql": "SELECT name, score FROM items WHERE score >= 20 ORDER BY id",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S02",
+      "intended": "allow",
+      "note": "lower case keywords",
+      "outcome": "true_negative",
+      "sql": "select id from items",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S03",
+      "intended": "allow",
+      "note": "one trailing semicolon",
+      "outcome": "true_negative",
+      "sql": "SELECT 1;",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S04",
+      "intended": "allow",
+      "note": "surrounding whitespace",
+      "outcome": "true_negative",
+      "sql": "  SELECT id FROM items  ",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S05",
+      "intended": "allow",
+      "note": "alias that looks like a keyword",
+      "outcome": "true_negative",
+      "sql": "SELECT name AS deleted FROM items",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S06",
+      "intended": "allow",
+      "note": "read-only common table expression",
+      "outcome": "false_positive",
+      "sql": "WITH x AS (SELECT 1) SELECT * FROM x",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S07",
+      "intended": "allow",
+      "note": "blocked word inside a string literal",
+      "outcome": "false_positive",
+      "sql": "SELECT name FROM items WHERE name = 'drop'",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S08",
+      "intended": "allow",
+      "note": "replace() string function",
+      "outcome": "false_positive",
+      "sql": "SELECT replace(name, 'a', 'b') FROM items",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S09",
+      "intended": "allow",
+      "note": "leading comment",
+      "outcome": "false_positive",
+      "sql": "/* read */ SELECT id FROM items",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S10",
+      "intended": "allow",
+      "note": "semicolon inside a comment",
+      "outcome": "false_positive",
+      "sql": "SELECT id FROM items -- ; note",
+      "verdict": "sql_multi_statement"
+    },
+    {
+      "id": "S11",
+      "intended": "block",
+      "note": "drop",
+      "outcome": "true_positive",
+      "sql": "DROP TABLE items",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S12",
+      "intended": "block",
+      "note": "delete",
+      "outcome": "true_positive",
+      "sql": "DELETE FROM items WHERE id = 1",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S13",
+      "intended": "block",
+      "note": "insert",
+      "outcome": "true_positive",
+      "sql": "INSERT INTO items VALUES (4, 'delta', 40)",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S14",
+      "intended": "block",
+      "note": "stacked statement",
+      "outcome": "true_positive",
+      "sql": "SELECT id FROM items; DROP TABLE items",
+      "verdict": "sql_multi_statement"
+    },
+    {
+      "id": "S15",
+      "intended": "block",
+      "note": "mixed case stacked statement",
+      "outcome": "true_positive",
+      "sql": "sElEcT id FrOm items; dRoP table items",
+      "verdict": "sql_multi_statement"
+    },
+    {
+      "id": "S16",
+      "intended": "block",
+      "note": "pragma",
+      "outcome": "true_positive",
+      "sql": "PRAGMA table_info(items)",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S17",
+      "intended": "block",
+      "note": "attach another database",
+      "outcome": "true_positive",
+      "sql": "ATTACH DATABASE 'other.db' AS other",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S18",
+      "intended": "block",
+      "note": "unbounded recursive query (blocked only because it starts with WITH)",
+      "outcome": "true_positive",
+      "sql": "WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c) SELECT x FROM c",
+      "verdict": "sql_not_select"
+    },
+    {
+      "id": "S19",
+      "intended": "block",
+      "note": "schema read outside the items table",
+      "outcome": "false_negative",
+      "sql": "SELECT * FROM sqlite_master",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S20",
+      "intended": "block",
+      "note": "schema read appended with UNION",
+      "outcome": "false_negative",
+      "sql": "SELECT name FROM items UNION SELECT sql FROM sqlite_master",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S21",
+      "intended": "block",
+      "note": "expensive allocation, no row or time cap",
+      "outcome": "false_negative",
+      "sql": "SELECT randomblob(100000000)",
+      "verdict": "allowed"
+    },
+    {
+      "id": "S22",
+      "intended": "block",
+      "note": "extension load attempt (sqlite3 disables extension loading by default, so it would fail at run time)",
+      "outcome": "false_negative",
+      "sql": "SELECT load_extension('x')",
+      "verdict": "allowed"
+    }
+  ],
+  "summary": {
+    "deep_replay_calls": 30,
+    "deep_replay_matches_results_deep": true,
+    "path": {
+      "cases": 17,
+      "false_negative": 0,
+      "false_positive": 1,
+      "true_negative": 9,
+      "true_positive": 7
+    },
+    "sql": {
+      "cases": 22,
+      "false_negative": 4,
+      "false_positive": 5,
+      "true_negative": 5,
+      "true_positive": 8
+    }
+  }
+}
