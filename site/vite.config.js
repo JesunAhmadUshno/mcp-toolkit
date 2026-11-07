@@ -4,5 +4,6 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: '/mcp-toolkit/',
   plugins: [react()],
-  server: { fs: { allow: ['..'] } },
+  // Dev server may read only this site and the files it imports, not the whole repo.
+  server: { fs: { allow: ['.', '../level-1-learn', '../level-2-build', '../level-3-deep', '../ROADMAP.md'] } },
 });
