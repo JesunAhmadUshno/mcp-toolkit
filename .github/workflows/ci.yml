@@ -1,7 +1,7 @@
 name: ci
 on: [push, pull_request]
 jobs:
-  smoke:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -10,3 +10,13 @@ jobs:
           python-version: "3.12"
       - name: scaffold smoke test
         run: python tests/test_smoke.py
+      - name: full unit test suite
+        run: python -m unittest discover -s tests -v
+      - name: rerun the three level runners and the guard corpus
+        run: |
+          python level-1-learn/run_learn.py
+          python level-2-build/run_build.py
+          python level-3-deep/run_deep.py
+          python level-3-deep/guard_corpus.py
+      - name: committed results must be reproduced byte for byte
+        run: git diff --exit-code -- level-1-learn level-2-build level-3-deep
