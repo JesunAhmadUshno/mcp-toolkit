@@ -7,6 +7,12 @@
     "build": "node src/guard.check.mjs && vite build",
     "preview": "vite preview"
   },
-  "dependencies": { "react": "18.3.1", "react-dom": "18.3.1" },
-  "devDependencies": { "@vitejs/plugin-react": "4.3.4", "vite": "5.4.11" }
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
+    "vite": "5.4.21"
+  }
 }
