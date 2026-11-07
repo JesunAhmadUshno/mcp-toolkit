@@ -8,3 +8,12 @@ models/
 .env
 *.key
 secrets/
+
+# runner outputs (fixtures rewritten on every run)
+level-2-build/demo_sandbox/
+level-3-deep/demo_sandbox/
+
+# site build
+site/node_modules/
+site/dist/
+site/.rubric/
