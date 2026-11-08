@@ -106,17 +106,16 @@ are B19 to B24, which is 6. 14 plus 4 plus 6 is 24, the total.
 Tools are 2 plus 2 plus 2, which is 6. Add gives 20 plus 30, which
 is 50. Scores at or above 20 are beta at 20 and gamma at 30.
 
-## Grade
+## Known limits
 
-8,600 of 10,000. Deductions, itemized and summing to 1,400:
-stdio transport only, no HTTP remote transport yet, 350; synthetic
-tiny fixtures (3 files, 3 database rows, toy calc tools), 300; run
-on the Muse VM, not the assigned fleet node BlackBoxV2, 200; no
-authentication, which is Deep scope, 200; host is sequential with
-no request timeout or concurrency, and the database lives only in
-its process memory, 200; SQL safety is a first word check plus a
-blocked word list, not a SQL parser or a sqlite authorizer, 150.
-10,000 minus 1,400 is 8,600.
+The scope limits of this level, largest first.
+
+- Stdio transport only, no HTTP remote transport yet.
+- Synthetic tiny fixtures (3 files, 3 database rows, toy calc tools).
+- Run on the Muse VM, not the assigned fleet node BlackBoxV2.
+- No authentication, which is Deep scope.
+- Host is sequential with no request timeout or concurrency, and the database lives only in its process memory.
+- SQL safety is a first word check plus a blocked word list, not a SQL parser or a sqlite authorizer.
 
 ## Failure modes and limits
 
@@ -138,9 +137,9 @@ blocked word list, not a SQL parser or a sqlite authorizer, 150.
 - Fixtures are tiny and synthetic by design: 3 files, 3 rows, and
   arithmetic prove the transport and routing path, not scale.
 - This level was run on the Muse VM (CPU), not on its fleet node
-  BlackBoxV2. That costs a grade deduction, named in the grade.
+  BlackBoxV2. It is listed under Known limits.
 
 ## What Deep adds next
 
 Authentication, remote MCP over HTTP, and the full tool safety
-rules set, per SPEC.md. See the root README level map.
+rules set, per PROPOSAL.md. See the root README level map.

@@ -20,12 +20,12 @@ official MCP SDK, and labelled that way in the repo.
 Learn: an in-process protocol with a sandboxed file server, a
 read-only database server, and the first safety rules. 18
 calls: 10 successes, 4 blocked, 4 named errors. 4 tools.
-17 tests. Grade 8,700 of 10,000.
+17 tests.
 
 Build: the same servers as real processes over stdio, plus a
 calc server, with a host that aggregates their tools. 24
 calls: 14 successes, 4 blocked, 6 named errors. 6 tools
-across 3 servers. 37 tests in total. Grade 8,600 of 10,000.
+across 3 servers. 37 tests in total.
 
 Deep (compressed): remote MCP over real HTTP on localhost,
 bearer tokens checked by SHA-256 hash comparison (the server
@@ -37,8 +37,7 @@ The 13 safety blocks, by reason: path traversal 2, absolute
 path 1, write attempt 1, delete attempt 1, SQL that is not a
 single read-only SELECT 4, multi-statement SQL 2, oversize
 request at the 8192-byte cap 1, unknown tool 1. 65 tests in
-total. Grade 8,300 of 10,000, with deductions named in the
-repo.
+total, with limits named in the repo.
 
 The honest limits, in the post and not in a footnote:
 localhost only with no TLS, so this server never leaves the

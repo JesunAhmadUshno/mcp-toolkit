@@ -166,4 +166,4 @@ The SQL guard is a first-word and token check, not a
 parser. The audit log and the database live in memory and
 reset on restart. MCP-style message shapes, not the
 official SDK, and no real client interop was tested. The
-rest of the Deep scope is the v1.1 backlog in ROADMAP.md.
+rest of the Deep scope is the v1.1 backlog in REPORT.md.

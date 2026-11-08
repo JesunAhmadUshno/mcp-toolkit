@@ -29,22 +29,21 @@ Repository: https://github.com/JesunAhmadUshno/mcp-toolkit
 ## Past, present, future (the dossier, condensed)
 
 Past: the MCP reference servers already exist, and the prior art
-and the problem history are recorded in DOSSIER.md and
-NOVELTY.md in the repo. The novelty claim there stays marked
+and the problem history are recorded in PROPOSAL.md and
+REPORT.md in the repo. The novelty claim there stays marked
 PROPOSED. This post makes no novelty claim beyond the measured
 work below.
 
 Present: v1.0 closes three levels on 2026-11-05. Learn built
 the in-process protocol and the first safety rules on 18
-protocol calls (grade 8,700 of 10,000). Build put the same
+protocol calls. Build put the same
 rules over real stdio transport with three servers and a host
-that aggregates their tools, on 24 protocol calls (grade 8,600
-of 10,000). Compressed Deep added bearer authentication checked
+that aggregates their tools, on 24 protocol calls. Compressed Deep added bearer authentication checked
 by SHA-256 hash comparison, two server-side roles, and the full
 safety rules set over real HTTP on localhost, on 30 protocol
-calls (grade 8,300 of 10,000).
+calls.
 
-Future: the rest of the v2 Deep scope is named in ROADMAP.md
+Future: the rest of the v2 Deep scope is named in REPORT.md
 in the repo as the v1.1 backlog. It includes TLS termination
 guidance, a token lifecycle with expiry and rotation, a
 durable audit log, official MCP SDK and real client interop
@@ -130,7 +129,7 @@ re-read both after blocks to prove it.
 - MCP-style, not the official SDK. No real MCP client
   interop was tested. That test is v1.1 backlog item 4.
 - All levels ran on the Muse VM (CPU), not on the assigned
-  fleet node BlackBoxV2. That costs a named grade deduction
+  fleet node BlackBoxV2. It is a named limit
   at every level.
 
 ## Why this shape

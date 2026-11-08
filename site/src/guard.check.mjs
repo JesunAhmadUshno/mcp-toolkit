@@ -4,11 +4,11 @@
 //  2. the 30 Deep plan inputs (deep_plan.json) give the recorded status, reason,
 //     code, result and audit log of results_deep.json, and the same summary,
 //  3. every guard corpus case gives the Python verdict in results_guard.json,
-//  4. the level README grades parse and their deductions sum to 10,000 minus the grade.
+//  4. the level README limits, the Deep failure modes and the REPORT.md future work parse.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as G from './guard.js';
-import { parseGrade, parseBullets, parseRoadmap, measuredDate } from './docs.js';
+import { parseBullets, parseRoadmap, measuredDate } from './docs.js';
 
 const root = new URL('../../', import.meta.url);
 const read = (p) => fs.readFileSync(new URL(p, root), 'utf8');
@@ -67,10 +67,10 @@ for (const c of guard.path) {
 }
 
 // 4. docs parsed by the page
-const grades = ['level-1-learn', 'level-2-build', 'level-3-deep'].map((l) => parseGrade(read(`${l}/README.md`)));
-for (const g of grades) assert.equal(g.grade, g.max - g.items.reduce((s, i) => s + i.points, 0));
+const limits = ['level-1-learn', 'level-2-build', 'level-3-deep'].map((l) => parseBullets(read(`${l}/README.md`), 'Known limits').length);
+for (const n of limits) assert.ok(n > 0);
 assert.ok(parseBullets(read('level-3-deep/README.md'), 'Failure modes and limits').length > 0);
-assert.ok(parseRoadmap(read('ROADMAP.md')).length > 0);
+assert.ok(parseRoadmap(read('REPORT.md')).length > 0);
 measuredDate(read('level-3-deep/README.md'));
 
-console.log('guard ok', { deepCalls: replay.length, auditEntries: audit.length, sqlCases: guard.sql.length, pathCases: guard.path.length, grades: grades.map((g) => g.grade) });
+console.log('guard ok', { deepCalls: replay.length, auditEntries: audit.length, sqlCases: guard.sql.length, pathCases: guard.path.length, limits });

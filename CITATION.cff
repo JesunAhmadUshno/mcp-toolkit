@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "mcp-toolkit: an MCP-style tool server and host with authentication and tool safety rules"
+authors:
+  - family-names: Ushno
+    given-names: Jesun Ahmad
+repository-code: "https://github.com/JesunAhmadUshno/mcp-toolkit"
+url: "https://jesunahmadushno.github.io/mcp-toolkit/"
+license: Apache-2.0
+version: "1.0"
+date-released: 2026-11-05

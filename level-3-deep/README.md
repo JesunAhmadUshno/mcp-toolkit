@@ -3,10 +3,10 @@
 Status: DONE (2026-11-05). Remote MCP over HTTP with bearer token
 authentication, two roles, and the full tool safety rules set,
 built with the Python standard library only. This is the compressed
-Deep for December: the single hardest capability set in SPEC.md
+Deep for December: the single hardest capability set in PROPOSAL.md
 (authentication, remote MCP over HTTP, full safety rules), built,
 tested, benchmarked, with failure modes written. The rest of the
-v2 Deep scope is the v1.1 backlog in the root ROADMAP.md.
+v2 Deep scope is the v1.1 backlog in REPORT.md (Future work).
 
 ## Honest scope line
 
@@ -149,20 +149,16 @@ to D26, which is 13: 2 plus 1 plus 1 plus 1 plus 4 plus 2 plus
 are 3 plus 2 plus 13, which is 18. Add gives 20 plus 30, which
 is 50. Scores at or above 20 are beta at 20 and gamma at 30.
 
-## Grade
+## Known limits
 
-8,300 of 10,000. Deductions, itemized and summing to 1,700:
-localhost HTTP only with no TLS, so tokens and data cross the
-wire in clear text on the loopback interface, 400; token auth is
-a teaching design (fixed bearer hashes, no expiry, rotation,
-revocation, or per-user identity), 400; synthetic tiny fixtures
-(3 files, 3 database rows, toy calc tools), 300; run on the Muse
-VM, not the assigned fleet node BlackBoxV2, 200; no persistence
-or rate limiting (in-memory database and audit log, unbounded
-request rate under the size cap), 200; the SQL guard is a token
-and first-word check, not a full SQL parser or a sqlite
-authorizer, so a read-only SELECT can still be expensive or
-oddly shaped, 200. 10,000 minus 1,700 is 8,300.
+The scope limits of this level, largest first.
+
+- Localhost HTTP only with no TLS, so tokens and data cross the wire in clear text on the loopback interface.
+- Token auth is a teaching design (fixed bearer hashes, no expiry, rotation, revocation, or per-user identity).
+- Synthetic tiny fixtures (3 files, 3 database rows, toy calc tools).
+- Run on the Muse VM, not the assigned fleet node BlackBoxV2.
+- No persistence or rate limiting (in-memory database and audit log, unbounded request rate under the size cap).
+- The SQL guard is a token and first-word check, not a full SQL parser or a sqlite authorizer, so a read-only SELECT can still be expensive or oddly shaped.
 
 ## Failure modes and limits
 
@@ -197,11 +193,10 @@ oddly shaped, 200. 10,000 minus 1,700 is 8,300.
   and arithmetic prove the auth, role, and safety path over HTTP,
   not scale.
 - This level was run on the Muse VM (CPU), not on its fleet
-  node BlackBoxV2. That costs a grade deduction, named in the
-  grade.
+  node BlackBoxV2. It is listed under Known limits.
 
 ## What remains
 
-The rest of the v2 Deep scope is the v1.1 backlog in the root
-ROADMAP.md: TLS termination, token lifecycle, durable audit,
+The rest of the v2 Deep scope is the v1.1 backlog in REPORT.md
+(Future work): TLS termination, token lifecycle, durable audit,
 official MCP SDK interop testing, and scale fixtures.

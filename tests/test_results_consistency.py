@@ -1,6 +1,6 @@
 """Docs and data cannot drift apart.
 
-1. The README tables and level README summaries quote the same counts
+1. The REPORT.md results tables and level README summaries quote the same counts
    as the summary blocks of the committed results JSON files.
 2. The committed guard corpus results and Deep plan export are exactly
    what level-3-deep/guard_corpus.py produces now, and the HTTP replay
@@ -31,7 +31,7 @@ def text(rel):
 
 class TestDocsMatchResults(unittest.TestCase):
     def setUp(self):
-        self.readme = text("README.md")
+        self.readme = text("REPORT.md")
         self.learn = load("level-1-learn/results_learn.json")["summary"]
         self.build = load("level-2-build/results_build.json")["summary"]
         self.deep_all = load("level-3-deep/results_deep.json")

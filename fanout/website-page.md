@@ -23,9 +23,7 @@ audit log. It runs on the Python standard library only. It is
 MCP-style, not the official MCP SDK.
 
 Status: v1.0, 2026-11-05. Learn, Build, and compressed Deep
-are done. Total tests: 65, all passing at v1.0. Level grades:
-Learn 8,700 of 10,000, Build 8,600 of 10,000, Deep 8,300 of
-10,000.
+are done. Total tests: 65, all passing at v1.0.
 
 ## Results
 
@@ -49,7 +47,7 @@ READMEs in the GitHub repo.
 - The SQL guard is a first-word and token check, not a SQL
   parser or a sqlite authorizer.
 - Compressed Deep is not the full v2 Deep scope. The
-  remainder is the v1.1 backlog in the repo ROADMAP.md.
+  remainder is the v1.1 backlog in the repo REPORT.md.
 
 ## Links
 

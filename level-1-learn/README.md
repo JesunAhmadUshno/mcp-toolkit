@@ -117,17 +117,16 @@ data calls (C05 to C10), which is 10. Blocked are 2 traversal plus
 table are beta at 20 and gamma at 30, exactly the C08 rows. The seed
 scores sum to 10 plus 20 plus 30, which is 60.
 
-## Grade
+## Known limits
 
-8,700 of 10,000. Deductions, itemized and summing to 1,300:
-in-process transport only, no HTTP or stdio transport yet, 400;
-synthetic tiny fixtures (2 files, 3 database rows), 300; run on the
-Muse VM, not the assigned fleet node BlackBoxV2, 200; no
-authentication, which is Deep scope, 150; SQL safety is a first word
-check plus a blocked word list, not a SQL parser or a sqlite
-authorizer, so a crafted read query is only partly constrained, 150;
-resources/read is minimal (two URI forms, no resources/list and no
-subscriptions), 100.
+The scope limits of this level, largest first.
+
+- In-process transport only, no HTTP or stdio transport yet.
+- Synthetic tiny fixtures (2 files, 3 database rows).
+- Run on the Muse VM, not the assigned fleet node BlackBoxV2.
+- No authentication, which is Deep scope.
+- SQL safety is a first word check plus a blocked word list, not a SQL parser or a sqlite authorizer, so a crafted read query is only partly constrained.
+- Resources/read is minimal (two URI forms, no resources/list and no subscriptions).
 
 ## Failure modes and limits
 
@@ -150,7 +149,7 @@ subscriptions), 100.
   requests outside that set return a generic internal error object,
   still with no traceback to the client.
 - This level was run on the Muse VM (CPU), not on its fleet node
-  BlackBoxV2. That costs a grade deduction, named in the grade.
+  BlackBoxV2. It is listed under Known limits.
 
 ## What Build adds next
 

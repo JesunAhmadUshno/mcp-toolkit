@@ -21,8 +21,7 @@ URL: https://github.com/JesunAhmadUshno/mcp-toolkit/releases/tag/v0.1
   (path_traversal 2, write_blocked 2), 4 named errors.
 - Tests: 17 unit tests in tests/test_learn_mcp.py, plus the
   scaffold smoke test.
-- Grade: 8,700 of 10,000, deductions itemized in the Learn
-  README.
+- Limits itemized in the Learn README (Known limits).
 - Limits carried in the release: in-process only, tiny
   fixtures (2 files, 3 rows), no authentication, teaching
   SQL guard.
@@ -40,8 +39,7 @@ URL: https://github.com/JesunAhmadUshno/mcp-toolkit/releases/tag/v0.5
 - Measured run: 24 protocol calls, 14 successes, 4 blocked
   (path_traversal 2, write_blocked 2), 6 named errors.
 - Tests: 20 Build unit tests, 37 in total with Learn.
-- Grade: 8,600 of 10,000, deductions itemized in the Build
-  README.
+- Limits itemized in the Build README (Known limits).
 - Limits carried in the release: stdio only, tiny fixtures
   (3 files, 3 rows), no authentication, no request timeout,
   in-memory database per server process.
@@ -68,8 +66,7 @@ URL: https://github.com/JesunAhmadUshno/mcp-toolkit/releases/tag/v1.0
   4 named errors, and 18 audit log entries.
 - Tests: 28 Deep unit tests, 65 in total with Learn and
   Build.
-- Grade: 8,300 of 10,000, deductions itemized in the Deep
-  README (total deductions 1,700).
+- Limits itemized in the Deep README (Known limits).
 - The rest of the v2 Deep scope is the v1.1 backlog in
-  ROADMAP.md. It is not part of v1.0 and is not claimed by
+  REPORT.md. It is not part of v1.0 and is not claimed by
   these notes.
