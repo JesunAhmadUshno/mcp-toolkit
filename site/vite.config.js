@@ -5,5 +5,5 @@ export default defineConfig({
   base: '/mcp-toolkit/',
   plugins: [react()],
   // Dev server may read only this site and the files it imports, not the whole repo.
-  server: { fs: { allow: ['.', '../level-1-learn', '../level-2-build', '../level-3-deep', '../ROADMAP.md'] } },
+  server: { fs: { allow: ['.', '../level-1-learn', '../level-2-build', '../level-3-deep', '../REPORT.md'] } },
 });

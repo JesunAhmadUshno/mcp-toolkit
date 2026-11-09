@@ -87,7 +87,7 @@ Measured 2026-11-05, from the level READMEs in the repo.
 
 ## Venue class note
 
-Per SPEC.md, the paper angle for P09 is a tool safety rules
+Per PROPOSAL.md, the paper angle for P09 is a tool safety rules
 note (what a tool may never do, with the test set). This brief
 is that note in measured form. Venue class is a workshop or
 conference in ML systems, agent infrastructure, or software
@@ -119,7 +119,7 @@ Jesun's call under the free-only rule.
 - Compressed Deep only. The v1.1 backlog (TLS guidance,
   token lifecycle, durable audit, SDK interop, SQL parser,
   timeouts and rate limiting, larger fixtures) is future
-  work, named in ROADMAP.md in the repo.
+  work, named in REPORT.md in the repo.
 
 ## Submission gate
 

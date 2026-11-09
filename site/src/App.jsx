@@ -7,9 +7,9 @@ import plan from '../../level-3-deep/deep_plan.json';
 import learnMd from '../../level-1-learn/README.md?raw';
 import buildMd from '../../level-2-build/README.md?raw';
 import deepMd from '../../level-3-deep/README.md?raw';
-import roadmapMd from '../../ROADMAP.md?raw';
+import reportMd from '../../REPORT.md?raw';
 import * as G from './guard.js';
-import { parseGrade, parseBullets, parseRoadmap, measuredDate } from './docs.js';
+import { parseBullets, parseRoadmap, measuredDate } from './docs.js';
 
 const REPO = 'https://github.com/JesunAhmadUshno/mcp-toolkit';
 const blob = (p) => `${REPO}/blob/main/${p}`;
@@ -47,9 +47,9 @@ function MenuBar() {
     <div className="menubar" role="banner">
       <span className="apple" aria-hidden="true">◆</span>
       <a className="app" href="#top">mcp-toolkit</a>
-      <a className="m" href={blob('SPEC.md')}>Spec</a>
+      <a className="m" href={blob('PROPOSAL.md')}>Proposal</a>
       <a className="m" href={blob('level-3-deep/README.md')}>Deep level</a>
-      <a className="m" href={blob('docs/research-review.md')}>Research review</a>
+      <a className="m" href={blob('REPORT.md')}>Report</a>
       <span className="spacer" />
       <span className="status"><i /> Guard parity checked at build</span>
       <a href={REPO}>GitHub ↗</a>
@@ -107,7 +107,7 @@ export default function App() {
       <Corpus load={load} />
       <Trace />
       <Audit />
-      <Grades />
+      <Limits />
       <Roadmap />
       <Dock />
       <footer>
@@ -466,35 +466,27 @@ function Audit() {
   );
 }
 
-function Grades() {
-  const grades = LEVELS.map((L) => ({ L, g: parseGrade(L.md) }));
+function Limits() {
+  const levels = LEVELS.map((L) => ({ L, items: parseBullets(L.md, 'Known limits') }));
   const fails = parseBullets(deepMd, 'Failure modes and limits');
   const [lv, setLv] = useState('deep');
-  const cur = grades.find((x) => x.L.key === lv);
-  const maxPts = Math.max(...grades.flatMap((x) => x.g.items.map((i) => i.points)));
+  const cur = levels.find((x) => x.L.key === lv);
   return (
-    <section id="limits" className="card window reveal" data-title="GRADE.txt">
+    <section id="limits" className="card window reveal" data-title="LIMITS.txt">
       <div className="head">
         <div>
-          <p className="eyebrow">Self-assigned grades and written limits</p>
-          <h2>Where the points were <em>lost</em>, in the project’s own words.</h2>
-          <p className="sub">Parsed at build time from the “Grade” section of each level README; the build fails if the deductions do not sum to {fmt(cur.g.max)} minus the grade. These grades are self-assessed and not externally reviewed.</p>
+          <p className="eyebrow">Written limits</p>
+          <h2>What each level does <em>not</em> do, in the project’s own words.</h2>
+          <p className="sub">Parsed at build time from the “Known limits” section of each level README, largest first; the build fails if a section goes missing. Self-assessed and not externally reviewed.</p>
         </div>
-        <div className="seg" role="group" aria-label="Level grade">
-          {grades.map(({ L, g }) => <button key={L.key} aria-pressed={lv === L.key} onClick={() => setLv(L.key)}>{L.name} {fmt(g.grade)}</button>)}
+        <div className="seg" role="group" aria-label="Level limits">
+          {levels.map(({ L, items }) => <button key={L.key} aria-pressed={lv === L.key} onClick={() => setLv(L.key)}>{L.name} ({items.length})</button>)}
         </div>
       </div>
       <div className="grid2">
         <div>
-          <div className="tile" style={{ marginBottom: 14 }}><div className="num">{fmt(cur.g.grade)}<small> / {fmt(cur.g.max)}</small></div><div className="cap">{cur.L.name} grade, {fmt(cur.g.total)} deducted across {cur.g.items.length} items</div></div>
-          <div className="bars">
-            {cur.g.items.map((it) => (
-              <div className="bar-row" key={it.text}>
-                <div className="lab"><span>{it.text}</span><b>−{fmt(it.points)}</b></div>
-                <div className="track"><div className="fill" style={{ width: `${(it.points / maxPts) * 100}%`, background: 'var(--bad)' }} /></div>
-              </div>
-            ))}
-          </div>
+          <h3>Known limits ({cur.L.name})</h3>
+          <ul className="fails">{cur.items.map((f) => <li key={f}>{f}</li>)}</ul>
         </div>
         <div>
           <h3>Written failure modes (Deep)</h3>
@@ -506,12 +498,12 @@ function Grades() {
 }
 
 function Roadmap() {
-  const items = parseRoadmap(roadmapMd);
+  const items = parseRoadmap(reportMd);
   return (
-    <section id="roadmap" className="card window reveal" data-title="ROADMAP.md">
+    <section id="roadmap" className="card window reveal" data-title="REPORT.md">
       <p className="eyebrow">What’s next · v1.1 backlog</p>
       <h2>{items.length} things this project does <em>not</em> do yet.</h2>
-      <p className="sub">Named at the v1.0 ship. None of it is claimed as done; an item leaves the list only with tests and measured results. See also the <a href={blob('docs/research-review.md')}>research review</a> for what each gap would need.</p>
+      <p className="sub">Named at the v1.0 ship. None of it is claimed as done; an item leaves the list only with tests and measured results. See also the <a href={blob('REPORT.md')}>report</a> for what each gap would need.</p>
       <div className="docs roadmap">
         {items.map((it) => <div key={it.n} className="item"><span className="pill muted">not done</span><b>{it.n}. {it.title}</b><small>{it.text[0].toUpperCase() + it.text.slice(1)}</small></div>)}
       </div>
