@@ -41,6 +41,15 @@ def categorize(status, payload):
         if reason in SAFETY_REASONS:
             return "safety_blocked", reason
         return "error", reason
+    result = payload.get("result") or {}
+    if result.get("isError"):
+        # Tool execution errors arrive in band as results with
+        # isError set (MCP tools page); the named reason rides in
+        # structuredContent.
+        reason = (result.get("structuredContent") or {}).get("reason")
+        if reason in SAFETY_REASONS:
+            return "safety_blocked", reason
+        return "error", reason
     return "success", None
 
 

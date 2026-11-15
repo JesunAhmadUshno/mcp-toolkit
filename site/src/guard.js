@@ -8,7 +8,8 @@
 // SANDBOX_ROOT, no symlinks, no real filesystem), and an allowed run_query is
 // never executed here; only the recorded D06 query shows its recorded rows.
 
-export const PROTOCOL_VERSION = 'deep-1';
+export const PROTOCOL_VERSION = '2025-11-25';
+export const SERVER_INFO_VERSION = '1.1';
 export const MAX_BODY_BYTES = 8192;
 export const ERR = {
   INVALID_REQUEST: -32600, METHOD_NOT_FOUND: -32601, INVALID_PARAMS: -32602,
@@ -50,6 +51,10 @@ export const makeRequest = (id, method, params) => ({ jsonrpc: '2.0', id, method
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x);
 const err = (id, code, message, reason) => ({ jsonrpc: '2.0', id, error: { code, message, data: { reason } } });
 const ok = (id, result) => ({ jsonrpc: '2.0', id, result });
+// CallToolResult envelopes, mirroring mcp_deep.py: the payload rides as
+// structuredContent plus its Python-style JSON serialization as text.
+const toolOk = (id, payload) => ok(id, { content: [{ type: 'text', text: pyJson(payload) }], structuredContent: payload, isError: false });
+const toolErr = (id, reason, message) => ok(id, { content: [{ type: 'text', text: message }], structuredContent: { reason }, isError: true });
 
 export function checkSql(sql) {
   const core = sql.trim().replace(/;+$/, '');
@@ -97,12 +102,16 @@ export function evaluate({ token, id = 1, method, tool, args }, recordedQueries 
   const bodyBytes = new TextEncoder().encode(body).length;
   const out = (http, response, stage, audit = null, extra = {}) => {
     const e = response.error;
+    const res = response.result;
+    const toolReason = res && res.isError ? (res.structuredContent || {}).reason : null;
+    const reason = e ? e.data.reason : toolReason;
     let category = 'success';
     if (http === 401) category = 'unauthenticated';
     else if (http === 403) category = 'role_blocked';
-    else if (http === 413 || (e && SAFETY_REASONS.includes(e.data.reason))) category = 'safety_blocked';
-    else if (e) category = 'error';
-    return { http, category, reason: e ? e.data.reason : null, code: e ? e.code : null, response, stage, audit, request, bodyBytes, ...extra };
+    else if (http === 413) category = 'safety_blocked';
+    else if (e) category = SAFETY_REASONS.includes(e.data.reason) ? 'safety_blocked' : 'error';
+    else if (toolReason) category = SAFETY_REASONS.includes(toolReason) ? 'safety_blocked' : 'error';
+    return { http, category, reason, code: e ? e.code : null, response, stage, audit, request, bodyBytes, ...extra };
   };
   // 1. size cap on the declared Content-Length, before parsing or auth
   if (bodyBytes > MAX_BODY_BYTES) return out(413, err(null, ERR.TOO_LARGE, 'request too large', 'request_too_large'), 'size cap', { category: 'safety', reason: 'request_too_large', tool: null, role: null });
@@ -113,44 +122,47 @@ export function evaluate({ token, id = 1, method, tool, args }, recordedQueries 
     return out(401, err(id, ERR.UNAUTHENTICATED, 'missing or invalid bearer token', 'unauthenticated'), 'authentication', { category: 'auth', reason: 'unauthenticated', tool: t, role: null });
   }
   // 3. dispatch
-  if (method === 'initialize') return out(200, ok(id, { capabilities: { tools: true }, protocolVersion: PROTOCOL_VERSION, role, server: 'mcp-toolkit-deep', transport: 'http' }), 'dispatch');
+  if (method === 'initialize') return out(200, ok(id, { capabilities: { tools: {} }, protocolVersion: PROTOCOL_VERSION, role, server: 'mcp-toolkit-deep', serverInfo: { name: 'mcp-toolkit-deep', version: SERVER_INFO_VERSION }, transport: 'http' }), 'dispatch');
   if (method === 'tools/list') return out(200, ok(id, { tools: TOOL_DEFS.filter((d) => ROLE_TOOLS[role].includes(d.name)) }), 'dispatch');
   if (method !== 'tools/call') return out(200, err(id, ERR.METHOD_NOT_FOUND, 'method not found', 'method_not_found'), 'dispatch');
-  // 4. intent classification, then role allowlist
-  const safety = (reason, message, t, stage) => out(200, err(id, ERR.SAFETY_BLOCKED, message, reason), stage, { category: 'safety', reason, tool: t, role });
+  // 4. intent classification, then role allowlist. A safety refusal is a
+  // tool result with isError set, as in mcp_deep.py; only an unknown tool
+  // name stays a protocol error (invalid params), with the audit entry kept.
+  const safety = (reason, message, t, stage) => out(200, toolErr(id, reason, message), stage, { category: 'safety', reason, tool: t, role });
   if (WRITE_TOOLS.includes(tool)) return safety('write_blocked', 'write tools are not offered', tool, 'intent');
   if (DELETE_TOOLS.includes(tool)) return safety('delete_blocked', 'delete tools are not offered', tool, 'intent');
-  if (!ALL_TOOLS.includes(tool)) return safety('unknown_tool', 'unknown tool', typeof tool === 'string' ? tool : null, 'intent');
+  if (!ALL_TOOLS.includes(tool)) return out(200, err(id, ERR.INVALID_PARAMS, 'unknown tool', 'unknown_tool'), 'intent', { category: 'safety', reason: 'unknown_tool', tool: typeof tool === 'string' ? tool : null, role });
   if (!ROLE_TOOLS[role].includes(tool)) return out(403, err(id, ERR.FORBIDDEN_ROLE, `role ${role} may not call ${tool}`, 'forbidden_role'), 'role allowlist', { category: 'authorization', reason: 'forbidden_role', tool, role });
   if (!isObj(args)) return out(200, err(id, ERR.INVALID_PARAMS, 'arguments must be an object', 'invalid_params'), 'arguments');
   // 5. per-tool checks, then the tool itself
   if (tool === 'read_file') {
     const v = readFileVerdict(args.path);
     if (v.safety) return safety(v.reason, v.message, 'read_file', 'path rules');
+    if (v.reason === 'file_not_found') return out(200, toolErr(id, 'file_not_found', v.message), 'path rules');
     if (v.reason) return out(200, err(id, v.code, v.message, v.reason), 'path rules');
-    return out(200, ok(id, { content: v.content, path: args.path }), 'tool ran');
+    return out(200, toolOk(id, { content: v.content, path: args.path }), 'tool ran');
   }
-  if (tool === 'list_files') return out(200, ok(id, { files: Object.keys(FIXTURE_FILES).sort() }), 'tool ran');
-  if (tool === 'list_items') return out(200, ok(id, { rows: SEED_ROWS }), 'tool ran');
+  if (tool === 'list_files') return out(200, toolOk(id, { files: Object.keys(FIXTURE_FILES).sort() }), 'tool ran');
+  if (tool === 'list_items') return out(200, toolOk(id, { rows: SEED_ROWS }), 'tool ran');
   if (tool === 'run_query') {
     const sql = args.sql;
     if (typeof sql !== 'string' || !sql.trim()) return out(200, err(id, ERR.INVALID_PARAMS, 'sql must be a non-empty string', 'invalid_params'), 'arguments');
     const reason = checkSql(sql);
     if (reason) return safety(reason, 'only a single read-only SELECT is allowed', 'run_query', 'SQL guard');
     const rows = recordedQueries.get(sql);
-    return out(200, ok(id, rows ? { rows } : null), 'SQL guard', null, { executed: false, recordedRows: !!rows });
+    return out(200, rows ? toolOk(id, { rows }) : ok(id, null), 'SQL guard', null, { executed: false, recordedRows: !!rows });
   }
   if (tool === 'calculate') {
     const { op, a, b } = args;
     if (!['add', 'subtract', 'multiply', 'divide'].includes(op)) return out(200, err(id, ERR.INVALID_PARAMS, 'op must be add, subtract, multiply, or divide', 'invalid_params'), 'arguments');
     if (typeof a !== 'number' || typeof b !== 'number') return out(200, err(id, ERR.INVALID_PARAMS, 'a and b must be numbers', 'invalid_params'), 'arguments');
-    if (op === 'divide' && b === 0) return out(200, err(id, ERR.CALC, 'division by zero', 'calc_error'), 'tool ran');
+    if (op === 'divide' && b === 0) return out(200, toolErr(id, 'calc_error', 'division by zero'), 'tool ran');
     const value = op === 'add' ? a + b : op === 'subtract' ? a - b : op === 'multiply' ? a * b : a / b;
-    return out(200, ok(id, { a, b, op, value }), 'tool ran');
+    return out(200, toolOk(id, { a, b, op, value }), 'tool ran');
   }
   // count_words
   if (typeof args.text !== 'string') return out(200, err(id, ERR.INVALID_PARAMS, 'text must be a string', 'invalid_params'), 'arguments');
-  return out(200, ok(id, { count: args.text.split(/\s+/).filter(Boolean).length }), 'tool ran');
+  return out(200, toolOk(id, { count: args.text.split(/\s+/).filter(Boolean).length }), 'tool ran');
 }
 
 // Arguments for one entry of level-3-deep/deep_plan.json.
