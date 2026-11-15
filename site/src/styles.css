@@ -1,5 +1,6 @@
 /* Hallmark · v2.0.0 · floor audit 2026-11-15 · existing page: Floor items only, data, copy and structure untouched */
 /* Hallmark · pre-emit critique: P3 H4 E4 S4 R5 V3 · weakest: V, one of six sibling dashboards on a shared house pattern; this pass standardises tokens, focus and motion only */
+/* Design unification 2026-11-15: this site already carries the llm-observability reference language (token structure, menubar, window cards, footer band); this pass adds the structure and flow diagrams in the same language; data, copy and results untouched */
 :root {
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -259,6 +260,18 @@ code { background: var(--wash-10); color: var(--text); border-radius: 6px; }
 
 footer { margin: 72px 0 -140px; padding: 48px 0 120px; background: var(--footer-bg); color: var(--footer-text); box-shadow: 0 0 0 100vmax var(--footer-bg); clip-path: inset(0 -100vmax); }
 footer code { background: var(--footer-code-bg); color: var(--term-text); }
+.diagrams { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.diagram-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+}
+.diagram-card h3 { margin: 0 0 12px; font-size: 16px; }
+.diagram-card svg { width: 100%; height: auto; display: block; }
+.d-box { fill: var(--surface-strong); stroke: var(--border); }
+.d-box-accent { fill: var(--primary-pale); stroke: var(--primary); }
+.d-label { fill: var(--text); font-size: 13px; font-weight: 600; font-family: var(--font-sans); }
+.d-sub { fill: var(--muted); font-size: 11px; font-family: var(--font-sans); }
+.d-arrow { stroke: var(--muted); stroke-width: 1.6; fill: none; }
 .support { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 20px; }
 .support a {
   border: 1px solid var(--footer-text); border-radius: var(--radius-pill);
