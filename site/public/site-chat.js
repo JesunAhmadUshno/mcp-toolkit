@@ -28,13 +28,13 @@
     "The assistant is not available right now. Please try again later.";
 
   var STYLE = [
-    ".scb-button{position:fixed;right:1rem;bottom:1rem;z-index:9998;",
+    ".scb-button{position:fixed;right:1rem;bottom:max(1rem,env(safe-area-inset-bottom));z-index:9998;touch-action:manipulation;",
     "background:var(--scb-accent,#1f6feb);color:var(--scb-accent-fg,#ffffff);",
     "border:1px solid var(--scb-border,transparent);border-radius:999px;",
     "padding:.65rem 1.1rem;font:600 .95rem var(--scb-font,system-ui,sans-serif);",
     "cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.25)}",
     ".scb-button:focus-visible{outline:3px solid var(--scb-accent,#1f6feb);outline-offset:2px}",
-    ".scb-panel{position:fixed;right:1rem;bottom:4.5rem;z-index:9998;",
+    ".scb-panel{position:fixed;right:1rem;bottom:max(4.5rem,calc(env(safe-area-inset-bottom) + 3.5rem));z-index:9998;overscroll-behavior:contain;",
     "width:min(22rem,calc(100vw - 2rem));height:min(30rem,calc(100vh - 6rem));",
     "display:none;flex-direction:column;overflow:hidden;",
     "background:var(--scb-bg,#ffffff);color:var(--scb-fg,#1a1a1a);",
@@ -49,7 +49,7 @@
     ".scb-close{background:none;border:none;color:inherit;font-size:1.15rem;",
     "cursor:pointer;line-height:1;padding:.2rem .4rem}",
     ".scb-close:focus-visible{outline:3px solid var(--scb-accent,#1f6feb);outline-offset:2px}",
-    ".scb-messages{flex:1;overflow-y:auto;padding:.8rem .9rem;",
+    ".scb-messages{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:.8rem .9rem;",
     "display:flex;flex-direction:column;gap:.6rem}",
     ".scb-msg{max-width:88%;padding:.55rem .75rem;border-radius:var(--scb-radius,14px);",
     "white-space:pre-wrap;word-wrap:break-word}",
@@ -68,6 +68,7 @@
     ".scb-send:focus-visible{outline:3px solid var(--scb-accent,#1f6feb);outline-offset:2px}",
     ".scb-send[disabled]{opacity:.55;cursor:wait}",
     "@media (prefers-reduced-motion: reduce){.scb-button,.scb-panel{transition:none}}",
+    "@media (max-width: 980px){.scb-button{bottom:5.75rem}.scb-panel{bottom:9.25rem;height:min(30rem,calc(100vh - 10.25rem))}}",
   ].join("");
 
   function el(tag, cls, text) {
@@ -88,6 +89,7 @@
     button.type = "button";
     button.setAttribute("aria-haspopup", "dialog");
     button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-label", "Ask about this project");
 
     var panel = el("section", "scb-panel");
     panel.setAttribute("role", "dialog");
@@ -102,6 +104,7 @@
     panel.appendChild(head);
 
     var messages = el("div", "scb-messages");
+    messages.setAttribute("aria-live", "polite");
     panel.appendChild(messages);
 
     var form = el("form", "scb-form");
@@ -140,6 +143,7 @@
         );
       }
       if (willOpen) input.focus();
+      else button.focus();
     }
 
     button.addEventListener("click", function () { toggle(); });
@@ -156,7 +160,7 @@
       send.disabled = true;
       input.value = "";
       addMessage(text, "user");
-      var waiting = addMessage("Thinking...", "bot");
+      var waiting = addMessage("Thinking…", "bot");
 
       fetch(endpoint, {
         method: "POST",
