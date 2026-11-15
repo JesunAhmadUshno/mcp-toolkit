@@ -1,6 +1,6 @@
 # mcp-toolkit
 
-**Question.** Can a small, standard-library MCP-style tool server
+**Question.** Can a small, standard-library MCP tool server
 enforce authentication, roles and named safety rules before any tool
 runs, and say why it refused?
 
@@ -21,6 +21,19 @@ byte for byte by one command each, and the Deep server has run end to
 end over real HTTP (level-3-deep/results_deep.json). No plan was locked
 before the results, so the verdict is capped at Functional; the
 Software product profile is not yet met (REPORT.md, Misses).
+
+**MCP conformance.** As of v1.1 the three servers implement the
+official Model Context Protocol specification (protocol version
+2025-11-25, negotiated down to 2024-11-05) and are verified against
+it by an automated suite: tests/test_mcp_conformance.py runs 32
+checks across the lifecycle, JSON-RPC 2.0 message shapes and error
+codes, tools, resources, ping, and the stdio and streamable HTTP
+transports, over the real transports. Per-check results and evidence
+are in CONFORMANCE.md. The Deep server is stateless streamable HTTP
+(no session id is issued). Client-side features the servers never
+declare (sampling, roots, elicitation) are out of scope, and
+connecting the official MCP SDK remains future work (REPORT.md,
+Future work 4).
 
 Live dashboard: https://jesunahmadushno.github.io/mcp-toolkit/ (built
 from the committed results files; the safety rule playground runs a
@@ -52,10 +65,11 @@ the byte-for-byte check.
 - Evaluate: PARTIAL 2026-11-07
 - Report: DONE 2026-11-08
 - Review: OPEN
-- Release: OPEN
+- Release: DONE 2026-11-15 (v1.1)
 
 v0.1, v0.5 and v1.0 are earlier tags from the Learn / Build / Deep
-ladder; no release has been cut under the portfolio standard v2 yet.
+ladder; v1.1 (2026-11-15) is the first release cut under the
+portfolio standard v2.
 
 ## Layout
 
@@ -63,10 +77,11 @@ ladder; no release has been cut under the portfolio standard v2 yet.
 | --- | --- |
 | PROPOSAL.md | Question, scope, prior work and proposed novelty (not pre-registered; replaces SPEC.md, NOVELTY.md, DOSSIER.md) |
 | REPORT.md | Background, method, results tables, post-hoc hypotheses, misses, threat model, remaining gaps, future work (replaces ROADMAP.md and docs/research-review.md) |
+| CONFORMANCE.md | Per-check MCP specification conformance table with spec citations and evidence (v1.1) |
 | level-1-learn/ | Code, runner and evidence for the in-process protocol: mcp_learn.py, run_learn.py, results_learn.json |
 | level-2-build/ | Code, runner and evidence over stdio subprocesses: mcp_build.py, server_main.py, run_build.py, results_build.json |
 | level-3-deep/ | Code, runners and evidence over authenticated HTTP: mcp_deep.py, run_deep.py, guard_corpus.py, bench_latency.py, deep_plan.json, results_deep.json, results_guard.json, results_latency.json |
-| tests/ | Unit tests per level, docs-match-results test, layout and no-public-grade test |
+| tests/ | Unit tests per level, the MCP conformance suite, docs-match-results test, layout and no-public-grade test |
 | docs/decisions/ | Records of hard-to-reverse choices |
 | fanout/ | Dated drafts (blog, tutorial, paper candidate, release notes) and the publicity log |
 | site/ | The live dashboard, built from the files above |
