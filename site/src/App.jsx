@@ -113,6 +113,12 @@ export default function App() {
       <footer>
         Code: Apache-2.0. Every number on this page is read at build time from <code>level-*/results_*.json</code>, <code>level-3-deep/results_guard.json</code> and the level READMEs.
         Traces and the audit log are recorded runs from {RUN_DATE}; the playground is a JavaScript port of the Deep guard that runs in your browser and is checked against those runs on every build.
+        <p className="support">
+          <a href="https://github.com/sponsors/JesunAhmadUshno">Sponsor this work</a>
+          <a href="https://github.com/sponsors/JesunAhmadUshno">Donate</a>
+          <a href="https://buymeacoffee.com/jesun">Buy Me a Coffee</a>
+          <a href="https://calendly.com/jesunahmadushno/30min">Work with me</a>
+        </p>
       </footer>
     </div>
   );
