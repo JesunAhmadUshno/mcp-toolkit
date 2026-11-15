@@ -25,6 +25,9 @@
   --shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
   --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
   --grid: rgba(20, 32, 51, 0.08);
+  --scb-bg: var(--surface-strong); --scb-fg: var(--text); --scb-accent: var(--primary);
+  --scb-accent-fg: var(--btn-ink); --scb-border: var(--border); --scb-radius: var(--radius-md);
+  --scb-font: var(--font-sans);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
