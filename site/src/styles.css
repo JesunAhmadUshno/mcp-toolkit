@@ -259,6 +259,12 @@ code { background: var(--wash-10); color: var(--text); border-radius: 6px; }
 
 footer { margin: 72px 0 -140px; padding: 48px 0 120px; background: var(--footer-bg); color: var(--footer-text); box-shadow: 0 0 0 100vmax var(--footer-bg); clip-path: inset(0 -100vmax); }
 footer code { background: var(--footer-code-bg); color: var(--term-text); }
+.support { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 20px; }
+.support a {
+  border: 1px solid var(--footer-text); border-radius: var(--radius-pill);
+  padding: 8px 16px; color: var(--footer-text); text-decoration: none; font-weight: 600;
+}
+.support a:hover { background: var(--footer-code-bg); }
 
 @media (max-width: 760px) {
   .card.window > *, .card.hero.window > * { margin-left: 18px; margin-right: 18px; }
