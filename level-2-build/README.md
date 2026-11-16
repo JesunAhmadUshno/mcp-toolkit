@@ -6,11 +6,14 @@ standard library only.
 
 ## Honest scope line
 
-This is an MCP-style implementation, not the official MCP SDK. It
-claims no spec compliance beyond the message shapes documented here.
-Transport is stdio only (newline-delimited JSON over subprocess
-pipes). Remote MCP over HTTP and authentication are Deep scope and
-are not in this level.
+This is an implementation of the MCP specification (protocol
+version 2025-11-25, negotiated down to 2024-11-05) over the stdio
+transport, not the official MCP SDK. Conformance to the
+specification is verified by tests/test_mcp_conformance.py and
+recorded in CONFORMANCE.md at the repository root. Transport is
+stdio only (newline-delimited JSON over subprocess pipes). Remote
+MCP over HTTP and authentication are Deep scope and are not in this
+level.
 
 ## BUILD-SPEC
 
@@ -74,9 +77,9 @@ all passing, plus the scaffold smoke test.
 
 | Call | Server | Method or tool | Status | Detail |
 | --- | --- | --- | --- | --- |
-| B01 | file | initialize | success | protocolVersion build-1, transport stdio |
-| B02 | database | initialize | success | protocolVersion build-1 |
-| B03 | calc | initialize | success | protocolVersion build-1 |
+| B01 | file | initialize | success | protocolVersion 2025-11-25, transport stdio |
+| B02 | database | initialize | success | protocolVersion 2025-11-25 |
+| B03 | calc | initialize | success | protocolVersion 2025-11-25 |
 | B04 | file | tools/list | success | read_file, list_files |
 | B05 | database | tools/list | success | list_items, run_query |
 | B06 | calc | tools/list | success | calculate, count_words |

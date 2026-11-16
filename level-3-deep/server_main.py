@@ -1,4 +1,4 @@
-"""Run the Deep MCP-style HTTP server as a standalone process.
+"""Run the Deep MCP HTTP server as a standalone process.
 
 Token hashes come from the environment at start. No token value and
 no hash is stored in this repo. Generate a hash for a token you

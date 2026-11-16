@@ -2,12 +2,27 @@
 
 All notable changes to this project. Format: Keep a Changelog 1.1.
 Versions follow Semantic Versioning. v0.1, v0.5 and v1.0 were tagged
-under the earlier Learn / Build / Deep ladder; no release has been cut
-under the portfolio standard v2 yet.
+under the earlier Learn / Build / Deep ladder; v1.1 is the first
+release cut under the portfolio standard v2.
 
 ## [Unreleased]
 
+## [1.1] - 2026-11-15
+
 ### Changed
+- 2026-11-15: All three levels migrated from MCP-style message
+  shapes to the MCP specification (protocol version 2025-11-25,
+  negotiated down to 2024-11-05): the lifecycle handshake with
+  notifications/initialized, JSON-RPC 2.0 error codes, CallToolResult
+  envelopes with content and structuredContent, tool execution
+  outcomes (including the safety refusals) returned as isError
+  results, resources/list and contents-shaped resources/read at
+  Learn and Build, ping, stdio parse errors (-32700) and
+  notification silence, and streamable HTTP behaviors at Deep (202
+  for notifications, 405 for GET /mcp, the MCP-Protocol-Version
+  header, Origin validation). The recorded run counts are unchanged
+  (Learn 18, Build 24, Deep 30 calls with the same summaries); the
+  results files were regenerated.
 - 2026-11-08: Restructured to the portfolio standard v2. README is the
   abstract (question, headline, field, job family, verdict, reproduce,
   lifecycle, layout). PROPOSAL.md replaces SPEC.md, NOVELTY.md and
@@ -27,6 +42,10 @@ under the portfolio standard v2 yet.
   files and that no public file carries a grade.
 
 ### Added
+- 2026-11-15: MCP conformance suite (tests/test_mcp_conformance.py,
+  59 tests across in-process, stdio, and HTTP arms) and
+  CONFORMANCE.md with the per-check table (32 checks, spec citations,
+  evidence).
 - 2026-11-08: CodeQL (Python, JavaScript), Dependabot (GitHub Actions,
   npm in site/), CHANGELOG.md, CITATION.cff, SECURITY.md,
   docs/decisions/0001.

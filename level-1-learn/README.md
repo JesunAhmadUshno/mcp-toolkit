@@ -1,27 +1,32 @@
 # Level 1, Learn: mcp-toolkit
 
-Status: DONE (2026-11-05). An MCP-style tool protocol taught from
+Status: DONE (2026-11-05). An MCP tool protocol taught from
 scratch, built with the Python standard library only.
 
 ## Honest scope line
 
-This is an in-process teaching implementation. It is not the official
-MCP SDK, it claims no spec compliance beyond the message shapes it
-documents here, and it has no network transport: no HTTP and no stdio
-transport yet. Requests and responses are Python dicts passed in
-process between a host client and two servers.
+This is an in-process teaching implementation of the MCP
+specification (protocol version 2025-11-25, negotiated down to
+2024-11-05). It is not the official MCP SDK. Conformance to the
+specification is verified by tests/test_mcp_conformance.py and
+recorded in CONFORMANCE.md at the repository root. It has no network
+transport: no HTTP and no stdio transport yet. Requests and
+responses are Python dicts passed in process between a host client
+and two servers.
 
 ## Method
 
-1. Message handling. A request is a JSON-RPC style dict with
+1. Message handling. A request is a JSON-RPC 2.0 dict with
    jsonrpc, id, method, and params. A response carries either result
    or an error object with code, message, and data.reason. Servers
-   never raise to the client and never return a traceback: every
-   failure becomes a named error object.
-2. Methods. initialize returns the server name, protocol version
-   learn-1, and capabilities. tools/list returns the server tool
+   never raise to the client and never return a traceback: protocol
+   problems become JSON-RPC errors, and tool execution outcomes,
+   including safety refusals, become tool results with isError set
+   and a named reason.
+2. Methods. initialize negotiates the protocol version and returns
+   capabilities and serverInfo. tools/list returns the server tool
    definitions with input schemas. tools/call runs one tool by name.
-   resources/read reads one resource by URI.
+   resources/list and resources/read expose resources by URI.
 3. File server. Sandboxed to a small demo directory with two fixture
    files (hello.txt and notes.txt, fixed content, written by the
    runner on every run). Tools: read_file and list_files. Resource
@@ -91,8 +96,8 @@ test.
 
 | Call | Server | Method or tool | Status | Detail |
 | --- | --- | --- | --- | --- |
-| C01 | file | initialize | success | protocolVersion learn-1 |
-| C02 | database | initialize | success | protocolVersion learn-1 |
+| C01 | file | initialize | success | protocolVersion 2025-11-25 |
+| C02 | database | initialize | success | protocolVersion 2025-11-25 |
 | C03 | file | tools/list | success | read_file, list_files |
 | C04 | database | tools/list | success | list_items, run_query |
 | C05 | file | read_file hello.txt | success | content "hello mcp\n" |

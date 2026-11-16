@@ -101,6 +101,7 @@ export default function App() {
       <div className="glow" aria-hidden="true" />
       <Hero />
       <Levels />
+      <Architecture />
       <Playground preset={preset} />
       <Rules load={load} />
       <Roles />
@@ -113,8 +114,92 @@ export default function App() {
       <footer>
         Code: Apache-2.0. Every number on this page is read at build time from <code>level-*/results_*.json</code>, <code>level-3-deep/results_guard.json</code> and the level READMEs.
         Traces and the audit log are recorded runs from {RUN_DATE}; the playground is a JavaScript port of the Deep guard that runs in your browser and is checked against those runs on every build.
+        <p className="support">
+          <a href="https://github.com/sponsors/JesunAhmadUshno">Sponsor this work</a>
+          <a href="https://github.com/sponsors/JesunAhmadUshno">Donate</a>
+          <a href="https://buymeacoffee.com/jesun">Buy Me a Coffee</a>
+          <a href="https://calendly.com/jesunahmadushno/30min">Work with me</a>
+        </p>
       </footer>
     </div>
+  );
+}
+
+function Architecture() {
+  const steps = [
+    'Call arrives: tools/call or resources/read',
+    'Initialize handshake and version checked',
+    'Method known, parameters valid',
+    'Guard rules and role check pass',
+  ];
+  return (
+    <section id="architecture" className="card window reveal" data-title="architecture.md">
+      <p className="eyebrow">Structure and flow</p>
+      <h2>One protocol, three transports, one <em>guard</em>.</h2>
+      <p className="sub">The same client speaks to all three levels, negotiating protocol 2025-11-25 down to 2024-11-05. Every call crosses the same checks before it reaches a tool, and every refusal lands in the audit log.</p>
+      <div className="diagrams">
+        <div className="diagram-card">
+          <h3>Structure: client, levels, tools</h3>
+          <svg viewBox="0 0 520 256" role="img" aria-label="Structure diagram: one MCP client negotiates with three server levels, Learn in process, Build over stdio, Deep over HTTP, and every level serves the same tools and resources">
+            <defs>
+              <marker id="arrMS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted)" />
+              </marker>
+            </defs>
+            <path className="d-arrow" d="M 112 128 L 132 128" markerEnd="url(#arrMS)" />
+            <path className="d-arrow" d="M 254 110 L 274 36" markerEnd="url(#arrMS)" />
+            <path className="d-arrow" d="M 254 128 L 274 128" markerEnd="url(#arrMS)" />
+            <path className="d-arrow" d="M 254 146 L 274 220" markerEnd="url(#arrMS)" />
+            <path className="d-arrow" d="M 398 36 L 418 108" markerEnd="url(#arrMS)" />
+            <path className="d-arrow" d="M 398 128 L 418 128" markerEnd="url(#arrMS)" />
+            <path className="d-arrow" d="M 398 220 L 418 148" markerEnd="url(#arrMS)" />
+            <path className="d-arrow" d="M 467 160 L 467 196" markerEnd="url(#arrMS)" />
+            <rect className="d-box" x="8" y="100" width="104" height="56" rx="10" />
+            <text className="d-label" x="20" y="124">MCP client</text>
+            <text className="d-sub" x="20" y="142">test runner</text>
+            <rect className="d-box" x="136" y="100" width="118" height="56" rx="10" />
+            <text className="d-label" x="148" y="124">Initialize</text>
+            <text className="d-sub" x="148" y="142">version handshake</text>
+            {LEVELS.map((L, i) => (
+              <g key={L.key}>
+                <rect className="d-box" x="278" y={12 + i * 94} width="120" height="44" rx="10" />
+                <text className="d-label" x="290" y={32 + i * 94}>{L.name}</text>
+                <text className="d-sub" x="290" y={48 + i * 94}>{L.data.summary.total_calls} recorded calls</text>
+              </g>
+            ))}
+            <rect className="d-box-accent" x="422" y="100" width="90" height="56" rx="10" />
+            <text className="d-label" x="432" y="124">Tools</text>
+            <text className="d-sub" x="432" y="142">and resources</text>
+            <rect className="d-box" x="422" y="200" width="90" height="44" rx="10" />
+            <text className="d-label" x="432" y="220">Audit log</text>
+            <text className="d-sub" x="432" y="236">every refusal</text>
+          </svg>
+        </div>
+        <div className="diagram-card">
+          <h3>Flow: how one call is decided</h3>
+          <svg viewBox="0 0 520 232" role="img" aria-label="Flow diagram: a call passes the initialize handshake, method and parameter validation, and the guard and role checks, then is either allowed with a result envelope or denied with a JSON-RPC error">
+            <defs>
+              <marker id="arrMF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted)" />
+              </marker>
+            </defs>
+            {steps.map((s, i) => (
+              <g key={s}>
+                {i > 0 && <path className="d-arrow" d={`M 260 ${i * 44 - 12} L 260 ${i * 44 - 2}`} markerEnd="url(#arrMF)" />}
+                <rect className="d-box" x="110" y={i * 44} width="300" height="32" rx="10" />
+                <text className="d-label" x="260" y={i * 44 + 20} textAnchor="middle">{s}</text>
+              </g>
+            ))}
+            <path className="d-arrow" d="M 260 164 L 260 178 L 140 178 L 140 196" markerEnd="url(#arrMF)" />
+            <path className="d-arrow" d="M 260 178 L 380 178 L 380 196" markerEnd="url(#arrMF)" />
+            <rect className="d-box-accent" x="30" y="200" width="220" height="32" rx="10" />
+            <text className="d-label" x="140" y="220" textAnchor="middle">Allow: result envelope</text>
+            <rect className="d-box" x="270" y="200" width="220" height="32" rx="10" />
+            <text className="d-label" x="380" y="220" textAnchor="middle">Deny: JSON-RPC error</text>
+          </svg>
+        </div>
+      </div>
+    </section>
   );
 }
 
