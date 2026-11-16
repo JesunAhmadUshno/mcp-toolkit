@@ -10,11 +10,15 @@ v2 Deep scope is the v1.1 backlog in REPORT.md (Future work).
 
 ## Honest scope line
 
-This is an MCP-style implementation, not the official MCP SDK. It
-claims no spec compliance beyond the message shapes documented
-here. Transport is HTTP on localhost only, with no TLS. Token auth
-is a teaching design (hash-compared bearer tokens, two fixed
-roles), not production identity: no expiry, no rotation, no OAuth.
+This is an implementation of the MCP specification (protocol
+version 2025-11-25, negotiated down to 2024-11-05) over the
+streamable HTTP transport in its stateless form (no session id is
+issued), not the official MCP SDK. Conformance to the specification
+is verified by tests/test_mcp_conformance.py and recorded in
+CONFORMANCE.md at the repository root. Transport is HTTP on
+localhost only, with no TLS. Token auth is a teaching design
+(hash-compared bearer tokens, two fixed roles), not production
+identity: no expiry, no rotation, no OAuth.
 
 ## DEEP-SPEC
 
@@ -108,7 +112,7 @@ passing.
 
 | Call | Role | Tool or method | HTTP | Status | Detail |
 | --- | --- | --- | --- | --- | --- |
-| D01 | reader | initialize | 200 | success | protocolVersion deep-1, role reader |
+| D01 | reader | initialize | 200 | success | protocolVersion 2025-11-25, role reader |
 | D02 | reader | tools/list | 200 | success | 4 tools (read only) |
 | D03 | reader | read_file hello.txt | 200 | success | content "hello mcp\n" |
 | D04 | reader | list_files | 200 | success | guide.txt, hello.txt, notes.txt |

@@ -159,7 +159,14 @@ def run_path_cases(core, sandbox):
     for cid, path, intended, note in PATH_CASES:
         resp = core._read_file(1, {"path": path.replace(SANDBOX_MARK, sandbox)},
                                "reader")
-        verdict = resp["error"]["data"]["reason"] if "error" in resp else "allowed"
+        if "error" in resp:
+            verdict = resp["error"]["data"]["reason"]
+        elif resp["result"].get("isError"):
+            # Tool execution outcomes arrive in band as results with
+            # isError set; the named reason rides in structuredContent.
+            verdict = resp["result"]["structuredContent"]["reason"]
+        else:
+            verdict = "allowed"
         blocked = verdict in SAFETY_REASONS
         rows.append({"id": cid, "path": path, "intended": intended,
                      "note": note, "verdict": verdict,

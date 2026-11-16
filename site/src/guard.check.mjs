@@ -35,7 +35,7 @@ assert.deepEqual(G.SEED_ROWS, seed);
 // 2. the recorded Deep run, replayed call by call
 const deep = json('level-3-deep/results_deep.json');
 const plan = json('level-3-deep/deep_plan.json');
-const recordedQueries = new Map([[plan[5].arguments.sql, deep.calls[5].result.rows]]);
+const recordedQueries = new Map([[plan[5].arguments.sql, deep.calls[5].result.structuredContent.rows]]);
 assert.equal(plan.length, deep.summary.total_calls);
 const audit = [];
 const replay = plan.map((p, i) => {

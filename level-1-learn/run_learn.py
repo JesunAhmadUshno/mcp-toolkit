@@ -68,6 +68,15 @@ def main():
             detail = {"error_code": resp["error"]["code"],
                       "error_reason": reason,
                       "error_message": resp["error"]["message"]}
+        elif resp["result"].get("isError"):
+            # Tool execution errors arrive in band as results with
+            # isError set (MCP tools page); the named reason rides in
+            # structuredContent.
+            reason = resp["result"]["structuredContent"]["reason"]
+            status = "blocked" if reason in BLOCKED_REASONS else "error"
+            detail = {"error_reason": reason,
+                      "error_message": resp["result"]["content"][0]["text"],
+                      "result": resp["result"]}
         else:
             status = "success"
             detail = {"result": resp["result"]}

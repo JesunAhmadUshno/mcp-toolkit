@@ -5,11 +5,15 @@
       "method": "initialize",
       "result": {
         "capabilities": {
-          "resources": true,
-          "tools": true
+          "resources": {},
+          "tools": {}
         },
-        "protocolVersion": "build-1",
+        "protocolVersion": "2025-11-25",
         "server": "file",
+        "serverInfo": {
+          "name": "mcp-toolkit-file",
+          "version": "1.1"
+        },
         "transport": "stdio"
       },
       "seq": 1,
@@ -21,11 +25,15 @@
       "method": "initialize",
       "result": {
         "capabilities": {
-          "resources": true,
-          "tools": true
+          "resources": {},
+          "tools": {}
         },
-        "protocolVersion": "build-1",
+        "protocolVersion": "2025-11-25",
         "server": "database",
+        "serverInfo": {
+          "name": "mcp-toolkit-database",
+          "version": "1.1"
+        },
         "transport": "stdio"
       },
       "seq": 2,
@@ -37,11 +45,15 @@
       "method": "initialize",
       "result": {
         "capabilities": {
-          "resources": true,
-          "tools": true
+          "resources": {},
+          "tools": {}
         },
-        "protocolVersion": "build-1",
+        "protocolVersion": "2025-11-25",
         "server": "calc",
+        "serverInfo": {
+          "name": "mcp-toolkit-calc",
+          "version": "1.1"
+        },
         "transport": "stdio"
       },
       "seq": 3,
@@ -177,8 +189,17 @@
       "label": "read_file",
       "method": "tools/call",
       "result": {
-        "content": "hello mcp\n",
-        "path": "hello.txt"
+        "content": [
+          {
+            "text": "{\"content\": \"hello mcp\\n\", \"path\": \"hello.txt\"}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "content": "hello mcp\n",
+          "path": "hello.txt"
+        }
       },
       "seq": 7,
       "server": "file",
@@ -188,11 +209,20 @@
       "label": "list_files",
       "method": "tools/call",
       "result": {
-        "files": [
-          "guide.txt",
-          "hello.txt",
-          "notes.txt"
-        ]
+        "content": [
+          {
+            "text": "{\"files\": [\"guide.txt\", \"hello.txt\", \"notes.txt\"]}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "files": [
+            "guide.txt",
+            "hello.txt",
+            "notes.txt"
+          ]
+        }
       },
       "seq": 8,
       "server": "file",
@@ -202,23 +232,32 @@
       "label": "list_items",
       "method": "tools/call",
       "result": {
-        "rows": [
+        "content": [
           {
-            "id": 1,
-            "name": "alpha",
-            "score": 10
-          },
-          {
-            "id": 2,
-            "name": "beta",
-            "score": 20
-          },
-          {
-            "id": 3,
-            "name": "gamma",
-            "score": 30
+            "text": "{\"rows\": [{\"id\": 1, \"name\": \"alpha\", \"score\": 10}, {\"id\": 2, \"name\": \"beta\", \"score\": 20}, {\"id\": 3, \"name\": \"gamma\", \"score\": 30}]}",
+            "type": "text"
           }
-        ]
+        ],
+        "isError": false,
+        "structuredContent": {
+          "rows": [
+            {
+              "id": 1,
+              "name": "alpha",
+              "score": 10
+            },
+            {
+              "id": 2,
+              "name": "beta",
+              "score": 20
+            },
+            {
+              "id": 3,
+              "name": "gamma",
+              "score": 30
+            }
+          ]
+        }
       },
       "seq": 9,
       "server": "database",
@@ -228,16 +267,25 @@
       "label": "run_query",
       "method": "tools/call",
       "result": {
-        "rows": [
+        "content": [
           {
-            "name": "beta",
-            "score": 20
-          },
-          {
-            "name": "gamma",
-            "score": 30
+            "text": "{\"rows\": [{\"name\": \"beta\", \"score\": 20}, {\"name\": \"gamma\", \"score\": 30}]}",
+            "type": "text"
           }
-        ]
+        ],
+        "isError": false,
+        "structuredContent": {
+          "rows": [
+            {
+              "name": "beta",
+              "score": 20
+            },
+            {
+              "name": "gamma",
+              "score": 30
+            }
+          ]
+        }
       },
       "seq": 10,
       "server": "database",
@@ -247,10 +295,19 @@
       "label": "calculate",
       "method": "tools/call",
       "result": {
-        "a": 20,
-        "b": 30,
-        "op": "add",
-        "value": 50
+        "content": [
+          {
+            "text": "{\"a\": 20, \"b\": 30, \"op\": \"add\", \"value\": 50}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "a": 20,
+          "b": 30,
+          "op": "add",
+          "value": 50
+        }
       },
       "seq": 11,
       "server": "calc",
@@ -260,7 +317,16 @@
       "label": "count_words",
       "method": "tools/call",
       "result": {
-        "count": 3
+        "content": [
+          {
+            "text": "{\"count\": 3}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "count": 3
+        }
       },
       "seq": 12,
       "server": "calc",
@@ -270,8 +336,13 @@
       "label": "resources/read sandbox://notes.txt",
       "method": "resources/read",
       "result": {
-        "text": "tools need rules\n",
-        "uri": "sandbox://notes.txt"
+        "contents": [
+          {
+            "mimeType": "text/plain",
+            "text": "tools need rules\n",
+            "uri": "sandbox://notes.txt"
+          }
+        ]
       },
       "seq": 13,
       "server": "file",
@@ -281,71 +352,104 @@
       "label": "resources/read db://items",
       "method": "resources/read",
       "result": {
-        "rows": [
+        "contents": [
           {
-            "id": 1,
-            "name": "alpha",
-            "score": 10
-          },
-          {
-            "id": 2,
-            "name": "beta",
-            "score": 20
-          },
-          {
-            "id": 3,
-            "name": "gamma",
-            "score": 30
+            "mimeType": "application/json",
+            "text": "{\"rows\": [{\"id\": 1, \"name\": \"alpha\", \"score\": 10}, {\"id\": 2, \"name\": \"beta\", \"score\": 20}, {\"id\": 3, \"name\": \"gamma\", \"score\": 30}]}",
+            "uri": "db://items"
           }
-        ],
-        "uri": "db://items"
+        ]
       },
       "seq": 14,
       "server": "database",
       "status": "success"
     },
     {
-      "error_code": -32002,
       "error_message": "path outside sandbox",
       "error_reason": "path_traversal",
       "label": "read_file",
       "method": "tools/call",
+      "result": {
+        "content": [
+          {
+            "text": "path outside sandbox",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "structuredContent": {
+          "reason": "path_traversal"
+        }
+      },
       "seq": 15,
       "server": "file",
       "status": "blocked"
     },
     {
-      "error_code": -32002,
       "error_message": "path outside sandbox",
       "error_reason": "path_traversal",
       "label": "read_file",
       "method": "tools/call",
+      "result": {
+        "content": [
+          {
+            "text": "path outside sandbox",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "structuredContent": {
+          "reason": "path_traversal"
+        }
+      },
       "seq": 16,
       "server": "file",
       "status": "blocked"
     },
     {
-      "error_code": -32003,
       "error_message": "only read-only SELECT is allowed",
       "error_reason": "write_blocked",
       "label": "run_query",
       "method": "tools/call",
+      "result": {
+        "content": [
+          {
+            "text": "only read-only SELECT is allowed",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "structuredContent": {
+          "reason": "write_blocked"
+        }
+      },
       "seq": 17,
       "server": "database",
       "status": "blocked"
     },
     {
-      "error_code": -32003,
       "error_message": "only read-only SELECT is allowed",
       "error_reason": "write_blocked",
       "label": "run_query",
       "method": "tools/call",
+      "result": {
+        "content": [
+          {
+            "text": "only read-only SELECT is allowed",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "structuredContent": {
+          "reason": "write_blocked"
+        }
+      },
       "seq": 18,
       "server": "database",
       "status": "blocked"
     },
     {
-      "error_code": -32001,
+      "error_code": -32602,
       "error_message": "unknown tool",
       "error_reason": "tool_not_found",
       "label": "delete_file",
@@ -365,11 +469,22 @@
       "status": "error"
     },
     {
-      "error_code": -32004,
       "error_message": "file not found",
       "error_reason": "file_not_found",
       "label": "read_file",
       "method": "tools/call",
+      "result": {
+        "content": [
+          {
+            "text": "file not found",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "structuredContent": {
+          "reason": "file_not_found"
+        }
+      },
       "seq": 21,
       "server": "file",
       "status": "error"
@@ -385,11 +500,22 @@
       "status": "error"
     },
     {
-      "error_code": -32006,
       "error_message": "division by zero",
       "error_reason": "calc_error",
       "label": "calculate",
       "method": "tools/call",
+      "result": {
+        "content": [
+          {
+            "text": "division by zero",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "structuredContent": {
+          "reason": "calc_error"
+        }
+      },
       "seq": 23,
       "server": "calc",
       "status": "error"

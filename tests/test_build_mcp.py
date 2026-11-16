@@ -1,4 +1,5 @@
-"""Unit tests for Level 2 Build MCP-style stdio transport. Hand-computed."""
+"""Unit tests for Level 2 Build MCP stdio transport. Hand-computed."""
+import json
 import os
 import sys
 import tempfile
@@ -33,15 +34,16 @@ class TestInProcessBuild(unittest.TestCase):
 
     def test_calc_add_and_word_count(self):
         r = self.host.call_tool(1, "calculate", {"op": "add", "a": 20, "b": 30})
-        self.assertEqual(r["result"]["value"], 50)
+        self.assertEqual(r["result"]["structuredContent"]["value"], 50)
         r = self.host.call_tool(2, "count_words", {"text": "tools need rules"})
-        self.assertEqual(r["result"]["count"], 3)
+        self.assertEqual(r["result"]["structuredContent"]["count"], 3)
 
     def test_calc_divide_by_zero(self):
         r = self.host.call_tool(1, "calculate",
                                 {"op": "divide", "a": 10, "b": 0})
-        self.assertEqual(r["error"]["code"], -32006)
-        self.assertEqual(r["error"]["data"]["reason"], "calc_error")
+        self.assertTrue(r["result"]["isError"])
+        self.assertEqual(r["result"]["structuredContent"]["reason"],
+                         "calc_error")
 
     def test_unknown_server_in_process(self):
         r = self.host.handle("nope", make_request(1, "initialize"))
@@ -66,7 +68,7 @@ class TestStdioBuild(unittest.TestCase):
         self.assertEqual(sorted(out), ["calc", "database", "file"])
         for name, resp in out.items():
             self.assertEqual(resp["result"]["server"], name)
-            self.assertEqual(resp["result"]["protocolVersion"], "build-1")
+            self.assertEqual(resp["result"]["protocolVersion"], "2025-11-25")
             self.assertEqual(resp["result"]["transport"], "stdio")
 
     def test_stdio_aggregation(self):
@@ -75,20 +77,20 @@ class TestStdioBuild(unittest.TestCase):
 
     def test_stdio_file_read(self):
         r = self.host.call_tool(1, "read_file", {"path": "hello.txt"})
-        self.assertEqual(r["result"], {"path": "hello.txt",
-                                       "content": "hello mcp\n"})
+        self.assertEqual(r["result"]["structuredContent"],
+                         {"path": "hello.txt", "content": "hello mcp\n"})
 
     def test_stdio_list_files(self):
         r = self.host.call_tool(1, "list_files", {})
-        self.assertEqual(r["result"]["files"],
+        self.assertEqual(r["result"]["structuredContent"]["files"],
                          ["guide.txt", "hello.txt", "notes.txt"])
 
     def test_stdio_db_rows_and_query(self):
         r = self.host.call_tool(1, "list_items", {})
-        self.assertEqual(r["result"]["rows"], SEED_ROWS)
+        self.assertEqual(r["result"]["structuredContent"]["rows"], SEED_ROWS)
         r = self.host.call_tool(2, "run_query", {
             "sql": "SELECT name, score FROM items WHERE score >= 20 ORDER BY id"})
-        self.assertEqual(r["result"]["rows"],
+        self.assertEqual(r["result"]["structuredContent"]["rows"],
                          [{"name": "beta", "score": 20},
                           {"name": "gamma", "score": 30}])
 
@@ -97,33 +99,37 @@ class TestStdioBuild(unittest.TestCase):
         # only if the registry maps it to the calc subprocess.
         r = self.host.call_tool(1, "calculate",
                                 {"op": "multiply", "a": 6, "b": 7})
-        self.assertEqual(r["result"]["value"], 42)
+        self.assertEqual(r["result"]["structuredContent"]["value"], 42)
 
     def test_stdio_resources(self):
         r = self.host.read_resource(1, "file", "sandbox://notes.txt")
-        self.assertEqual(r["result"]["text"], "tools need rules\n")
+        self.assertEqual(r["result"]["contents"][0]["text"],
+                         "tools need rules\n")
         r = self.host.read_resource(2, "database", "db://items")
-        self.assertEqual(r["result"]["rows"], SEED_ROWS)
+        payload = json.loads(r["result"]["contents"][0]["text"])
+        self.assertEqual(payload["rows"], SEED_ROWS)
 
     def test_stdio_traversal_blocked(self):
         for path in ("../secret.txt", "/etc/passwd"):
             r = self.host.call_tool(1, "read_file", {"path": path})
-            self.assertEqual(r["error"]["code"], -32002)
-            self.assertEqual(r["error"]["data"]["reason"], "path_traversal")
+            self.assertTrue(r["result"]["isError"], path)
+            self.assertEqual(r["result"]["structuredContent"]["reason"],
+                             "path_traversal", path)
 
     def test_stdio_write_blocked_and_table_intact(self):
         for sql in ("DROP TABLE items",
                     "INSERT INTO items VALUES (4, 'delta', 40)"):
             r = self.host.call_tool(1, "run_query", {"sql": sql})
-            self.assertEqual(r["error"]["code"], -32003)
-            self.assertEqual(r["error"]["data"]["reason"], "write_blocked")
+            self.assertTrue(r["result"]["isError"], sql)
+            self.assertEqual(r["result"]["structuredContent"]["reason"],
+                             "write_blocked", sql)
         r = self.host.call_tool(2, "list_items", {})
-        self.assertEqual(r["result"]["rows"], SEED_ROWS)
+        self.assertEqual(r["result"]["structuredContent"]["rows"], SEED_ROWS)
 
     def test_stdio_unknown_tool(self):
         r = self.host.handle("file", make_request(1, "tools/call",
                              {"name": "delete_file", "arguments": {}}))
-        self.assertEqual(r["error"]["code"], -32001)
+        self.assertEqual(r["error"]["code"], -32602)
         self.assertNotIn("Traceback", str(r))
 
     def test_stdio_invalid_params(self):
@@ -132,7 +138,9 @@ class TestStdioBuild(unittest.TestCase):
 
     def test_stdio_file_not_found(self):
         r = self.host.call_tool(1, "read_file", {"path": "missing.txt"})
-        self.assertEqual(r["error"]["code"], -32004)
+        self.assertTrue(r["result"]["isError"])
+        self.assertEqual(r["result"]["structuredContent"]["reason"],
+                         "file_not_found")
 
     def test_stdio_unknown_method(self):
         r = self.host.handle("file", make_request(1, "bogus/method"))
@@ -145,7 +153,9 @@ class TestStdioBuild(unittest.TestCase):
     def test_stdio_divide_by_zero(self):
         r = self.host.call_tool(1, "calculate",
                                 {"op": "divide", "a": 1, "b": 0})
-        self.assertEqual(r["error"]["code"], -32006)
+        self.assertTrue(r["result"]["isError"])
+        self.assertEqual(r["result"]["structuredContent"]["reason"],
+                         "calc_error")
 
 
 if __name__ == "__main__":

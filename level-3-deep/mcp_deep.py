@@ -1,8 +1,18 @@
-"""MCP-style tool protocol, Deep level: authenticated HTTP transport.
+"""Model Context Protocol tool server, Deep level: authenticated HTTP
+transport.
 
-This is a stdlib-only MCP-style implementation. It is not the official
-MCP SDK and claims no spec compliance beyond the message shapes it
-documents. Deep adds, over the stdio Build level:
+This is a stdlib-only implementation of the MCP specification
+(protocol version 2025-11-25, with negotiation back to 2024-11-05)
+over the specification's streamable HTTP transport, in its stateless
+form: no session id is issued, and every request is answered with a
+single JSON object. It is not the official MCP SDK. Tool execution
+outcomes, including the named safety refusals, are returned as tool
+results with isError set, as the specification's tools page
+prescribes; protocol problems are JSON-RPC errors. The bearer token
+layer is the toolkit's authorization choice under the
+specification's Authorization framework. Conformance evidence:
+CONFORMANCE.md and tests/test_mcp_conformance.py at the repository
+root. Deep adds, over the stdio Build level:
 
 - Remote transport: one JSON-RPC style server over real HTTP
   (http.server, localhost only), POST /mcp, plus a small client.
@@ -31,15 +41,21 @@ import re
 import sqlite3
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-PROTOCOL_VERSION = "deep-1"
+PROTOCOL_VERSION = "2025-11-25"
+SUPPORTED_PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18",
+                               "2025-03-26", "2024-11-05")
+SERVER_INFO_VERSION = "1.1"
 MAX_BODY_BYTES = 8192
 
+ERR_PARSE = -32700
 ERR_INVALID_REQUEST = -32600
 ERR_METHOD_NOT_FOUND = -32601
 ERR_INVALID_PARAMS = -32602
+ERR_INTERNAL = -32603
 ERR_UNAUTHENTICATED = -32010
 ERR_FORBIDDEN_ROLE = -32011
 ERR_TOOL_NOT_FOUND = -32001
@@ -183,6 +199,42 @@ def ok_response(req_id, result):
     return {"jsonrpc": "2.0", "id": req_id, "result": result}
 
 
+def negotiate_version(params):
+    """MCP version negotiation: echo a supported version the client
+    asked for; otherwise answer with the newest version supported."""
+    requested = params.get("protocolVersion")
+    if requested in SUPPORTED_PROTOCOL_VERSIONS:
+        return requested
+    return PROTOCOL_VERSION
+
+
+def tool_result(req_id, payload):
+    """A successful CallToolResult: the payload as structuredContent
+    plus its JSON serialization as a text content block."""
+    return ok_response(req_id, {
+        "content": [{"type": "text",
+                     "text": json.dumps(payload, sort_keys=True)}],
+        "structuredContent": payload,
+        "isError": False})
+
+
+def tool_error(req_id, reason, message):
+    """A tool execution error, reported in band as the specification
+    prescribes: a result with isError true, the message as text
+    content, and the toolkit's named reason as structuredContent."""
+    return ok_response(req_id, {
+        "content": [{"type": "text", "text": message}],
+        "structuredContent": {"reason": reason},
+        "isError": True})
+
+
+def initialize_params():
+    """The initialize params a spec-conforming client sends."""
+    return {"protocolVersion": PROTOCOL_VERSION, "capabilities": {},
+            "clientInfo": {"name": "mcp-toolkit-http-client",
+                           "version": SERVER_INFO_VERSION}}
+
+
 def make_request(req_id, method, params=None):
     return {"jsonrpc": "2.0", "id": req_id, "method": method,
             "params": params or {}}
@@ -210,6 +262,15 @@ class ToolkitCore:
             [(r["id"], r["name"], r["score"]) for r in SEED_ROWS])
         self.conn.commit()
         self.audit_log = []
+        # Lifecycle state (specification, Lifecycle): the roles that
+        # have completed the initialize exchange. The HTTP layer also
+        # calls mark_initialized when notifications/initialized
+        # arrives for a role.
+        self._ready_roles = set()
+
+    def mark_initialized(self, role):
+        if role is not None:
+            self._ready_roles.add(role)
 
     def audit(self, category, reason, tool, role):
         with self._lock:
@@ -226,37 +287,71 @@ class ToolkitCore:
         return [t for t in TOOL_DEFS if t["name"] in allowed]
 
     def dispatch(self, request, role):
-        """Route one authenticated JSON-RPC request. Returns a response
-        dict; the HTTP layer maps auth and role failures to status
-        codes before this is called for tools/call (see handle_call)."""
-        req_id = request.get("id") if isinstance(request, dict) else None
-        if not isinstance(request, dict) or "method" not in request:
+        """Route one authenticated JSON-RPC request. Returns an
+        (http_status, response dict) pair; the HTTP layer maps auth
+        and role failures to status codes before this is called for
+        tools/call (see _call_tool). Requests that arrive before the
+        role completed the initialize exchange are rejected, as the
+        specification's lifecycle rules require."""
+        if isinstance(request, list):
+            return 200, error_response(
+                None, ERR_INVALID_REQUEST,
+                "invalid request: JSON-RPC batching is not part of MCP",
+                "invalid_request")
+        if not isinstance(request, dict):
+            return 200, error_response(None, ERR_INVALID_REQUEST,
+                                       "invalid request", "invalid_request")
+        req_id = request.get("id")
+        if "id" in request and req_id is None:
+            return 200, error_response(None, ERR_INVALID_REQUEST,
+                                       "request id must not be null",
+                                       "invalid_request")
+        method = request.get("method")
+        if not isinstance(method, str):
             return 200, error_response(req_id, ERR_INVALID_REQUEST,
                                        "invalid request", "invalid_request")
-        method = request["method"]
+        if request.get("jsonrpc") != "2.0":
+            return 200, error_response(req_id, ERR_INVALID_REQUEST,
+                                       "jsonrpc must be \"2.0\"",
+                                       "invalid_request")
         params = request.get("params") or {}
         if not isinstance(params, dict):
             return 200, error_response(req_id, ERR_INVALID_PARAMS,
                                        "params must be an object",
                                        "invalid_params")
-        if method == "initialize":
-            return 200, ok_response(req_id, {
-                "protocolVersion": PROTOCOL_VERSION,
-                "server": "mcp-toolkit-deep",
-                "transport": "http",
-                "role": role,
-                "capabilities": {"tools": True}})
-        if method == "tools/list":
-            return 200, ok_response(req_id, {"tools": self.tools_for_role(role)})
-        if method == "tools/call":
-            return self._call_tool(req_id, params, role)
-        return 200, error_response(req_id, ERR_METHOD_NOT_FOUND,
-                                   "method not found", "method_not_found")
+        try:
+            if method == "initialize":
+                self._ready_roles.add(role)
+                return 200, ok_response(req_id, {
+                    "protocolVersion": negotiate_version(params),
+                    "server": "mcp-toolkit-deep",
+                    "transport": "http",
+                    "role": role,
+                    "capabilities": {"tools": {}},
+                    "serverInfo": {"name": "mcp-toolkit-deep",
+                                   "version": SERVER_INFO_VERSION}})
+            if method == "ping":
+                return 200, ok_response(req_id, {})
+            if role not in self._ready_roles:
+                return 200, error_response(
+                    req_id, ERR_INVALID_REQUEST,
+                    "server not initialized: send initialize, then "
+                    "notifications/initialized", "not_initialized")
+            if method == "tools/list":
+                return 200, ok_response(
+                    req_id, {"tools": self.tools_for_role(role)})
+            if method == "tools/call":
+                return self._call_tool(req_id, params, role)
+            return 200, error_response(req_id, ERR_METHOD_NOT_FOUND,
+                                       "method not found", "method_not_found")
+        except Exception as exc:
+            return 200, error_response(
+                req_id, ERR_INTERNAL,
+                "internal error: " + type(exc).__name__, "internal_error")
 
     def _safety_block(self, req_id, reason, message, tool, role):
         self.audit("safety", reason, tool, role)
-        return 200, error_response(req_id, ERR_SAFETY_BLOCKED,
-                                   message, reason)
+        return 200, tool_error(req_id, reason, message)
 
     def _call_tool(self, req_id, params, role):
         name = params.get("name")
@@ -273,10 +368,13 @@ class ToolkitCore:
                                       "delete tools are not offered",
                                       name, role)
         if name not in ALL_TOOLS:
-            return self._safety_block(req_id, "unknown_tool",
-                                      "unknown tool",
-                                      name if isinstance(name, str) else None,
-                                      role)
+            # The attempt is audited as a safety event, and the wire
+            # answer is the protocol error the specification assigns
+            # to an unknown tool: invalid params.
+            self.audit("safety", "unknown_tool",
+                       name if isinstance(name, str) else None, role)
+            return 200, error_response(req_id, ERR_INVALID_PARAMS,
+                                       "unknown tool", "unknown_tool")
         if name not in ROLE_TOOLS[role]:
             self.audit("authorization", "forbidden_role", name, role)
             return 403, error_response(
@@ -325,13 +423,12 @@ class ToolkitCore:
                     req_id, "path_traversal", "path traversal blocked",
                     "read_file", role)[1]
         if not os.path.isfile(target):
-            return error_response(req_id, ERR_NOT_FOUND,
-                                  "file not found", "file_not_found")
+            return tool_error(req_id, "file_not_found", "file not found")
         with open(target, encoding="utf-8") as f:
-            return ok_response(req_id, {"path": path, "content": f.read()})
+            return tool_result(req_id, {"path": path, "content": f.read()})
 
     def _list_files(self, req_id, args, role):
-        return ok_response(req_id,
+        return tool_result(req_id,
                            {"files": sorted(os.listdir(self.sandbox))})
 
     def _rows(self, sql):
@@ -341,7 +438,7 @@ class ToolkitCore:
             return [dict(zip(cols, row)) for row in cur.fetchall()]
 
     def _list_items(self, req_id, args, role):
-        return ok_response(req_id, {
+        return tool_result(req_id, {
             "rows": self._rows(
                 "SELECT id, name, score FROM items ORDER BY id")})
 
@@ -371,9 +468,9 @@ class ToolkitCore:
         try:
             rows = self._rows(sql)
         except sqlite3.Error as exc:
-            return error_response(req_id, ERR_QUERY,
-                                  "query error: " + str(exc), "query_error")
-        return ok_response(req_id, {"rows": rows})
+            return tool_error(req_id, "query_error",
+                              "query error: " + str(exc))
+        return tool_result(req_id, {"rows": rows})
 
     def _calculate(self, req_id, args, role):
         op, a, b = args.get("op"), args.get("a"), args.get("b")
@@ -394,17 +491,16 @@ class ToolkitCore:
             value = a * b
         else:
             if b == 0:
-                return error_response(req_id, ERR_CALC,
-                                      "division by zero", "calc_error")
+                return tool_error(req_id, "calc_error", "division by zero")
             value = a / b
-        return ok_response(req_id, {"op": op, "a": a, "b": b, "value": value})
+        return tool_result(req_id, {"op": op, "a": a, "b": b, "value": value})
 
     def _count_words(self, req_id, args, role):
         text = args.get("text")
         if not isinstance(text, str):
             return error_response(req_id, ERR_INVALID_PARAMS,
                                   "text must be a string", "invalid_params")
-        return ok_response(req_id, {"count": len(text.split())})
+        return tool_result(req_id, {"count": len(text.split())})
 
 
 def make_handler(core, token_store):
@@ -422,10 +518,23 @@ def make_handler(core, token_store):
             self.end_headers()
             self.wfile.write(body)
 
+        def _send_empty(self, status):
+            self.send_response(status)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def do_GET(self):
             if self.path == "/health":
                 self._send_json(200, {"status": "ok", "transport": "http",
                                       "protocolVersion": PROTOCOL_VERSION})
+                return
+            if self.path == "/mcp":
+                # Streamable HTTP: this server offers no server-push
+                # stream, so GET on the MCP endpoint is refused with
+                # 405, as the specification allows.
+                self._send_json(405, error_response(
+                    None, ERR_METHOD_NOT_FOUND, "method not allowed",
+                    "method_not_allowed"))
                 return
             self._send_json(404, error_response(
                 None, ERR_NOT_FOUND, "not found", "not_found"))
@@ -444,6 +553,25 @@ def make_handler(core, token_store):
                     "request_too_large"))
                 return
             raw = self.rfile.read(size) if size else b""
+            origin = self.headers.get("Origin")
+            if origin is not None:
+                # Streamable HTTP security rule: validate the Origin
+                # header against DNS rebinding. This server is local,
+                # so only loopback origins are accepted.
+                host = urllib.parse.urlparse(origin).hostname
+                if host not in ("localhost", "127.0.0.1", "::1"):
+                    self._send_json(403, error_response(
+                        None, ERR_FORBIDDEN_ROLE,
+                        "origin not allowed", "origin_forbidden"))
+                    return
+            version_header = self.headers.get("MCP-Protocol-Version")
+            if version_header is not None \
+                    and version_header not in SUPPORTED_PROTOCOL_VERSIONS:
+                self._send_json(400, error_response(
+                    None, ERR_INVALID_REQUEST,
+                    "unsupported MCP-Protocol-Version header",
+                    "invalid_request"))
+                return
             auth = self.headers.get("Authorization") or ""
             token = auth[len("Bearer "):] if auth.startswith("Bearer ") else None
             role = token_store.authenticate(token)
@@ -468,8 +596,19 @@ def make_handler(core, token_store):
                 request = json.loads(raw.decode("utf-8")) if raw else {}
             except ValueError:
                 self._send_json(200, error_response(
-                    None, ERR_INVALID_REQUEST, "invalid json",
-                    "invalid_request"))
+                    None, ERR_PARSE, "parse error", "parse_error"))
+                return
+            if isinstance(request, dict) and "id" not in request:
+                # A notification: accepted with 202 and no body, and
+                # never answered, as the base protocol requires.
+                if isinstance(request.get("method"), str):
+                    if request["method"] == "notifications/initialized":
+                        core.mark_initialized(role)
+                    self._send_empty(202)
+                else:
+                    self._send_json(400, error_response(
+                        None, ERR_INVALID_REQUEST, "invalid request",
+                        "invalid_request"))
                 return
             status, payload = core.dispatch(request, role)
             self._send_json(status, payload)
@@ -492,34 +631,98 @@ class HttpMcpClient:
     Methods return (http_status, payload_dict). HTTP error statuses
     (401, 403, 413) are returned, not raised, so callers can count
     them. The token is held in memory only and never logged.
+
+    The client follows the specification's lifecycle: a successful
+    initialize is completed with a notifications/initialized
+    notification, later requests carry the negotiated version in the
+    MCP-Protocol-Version header, and if a request is answered with a
+    not_initialized error the client performs the handshake once and
+    retries the request once.
     """
 
     def __init__(self, base_url, token=None):
         self.base_url = base_url.rstrip("/")
         self.token = token
+        self._handshaken = set()
+        self._negotiated = {}
+        self._handshake_id = 9000
+
+    def _effective_token(self, token):
+        return self.token if token == "USE_CLIENT_TOKEN" else token
 
     def post_raw(self, raw_bytes, token="USE_CLIENT_TOKEN"):
         url = self.base_url + "/mcp"
         req = urllib.request.Request(url, data=raw_bytes, method="POST")
         req.add_header("Content-Type", "application/json")
-        tok = self.token if token == "USE_CLIENT_TOKEN" else token
+        req.add_header("Accept", "application/json, text/event-stream")
+        tok = self._effective_token(token)
         if tok:
             req.add_header("Authorization", "Bearer " + tok)
+        version = self._negotiated.get(tok)
+        if version:
+            req.add_header("MCP-Protocol-Version", version)
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
-                return resp.status, json.loads(resp.read().decode("utf-8"))
+                body = resp.read().decode("utf-8")
+                if not body.strip():
+                    return resp.status, {}
+                return resp.status, json.loads(body)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8")
+            if not body.strip():
+                return exc.code, {}
             try:
                 return exc.code, json.loads(body)
             except ValueError:
                 return exc.code, {"error": {"data": {"reason": "http_error"}}}
 
+    def _handshake(self, token):
+        tok = self._effective_token(token)
+        self._handshake_id += 1
+        status, resp = self.post_raw(json.dumps({
+            "jsonrpc": "2.0", "id": self._handshake_id,
+            "method": "initialize", "params": initialize_params(),
+        }).encode("utf-8"), token=token)
+        if status == 200 and isinstance(resp, dict) and "result" in resp:
+            self._negotiated[tok] = resp["result"].get(
+                "protocolVersion", PROTOCOL_VERSION)
+            self.post_raw(json.dumps({
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized",
+            }).encode("utf-8"), token=token)
+        self._handshaken.add(tok)
+
     def post(self, payload, token="USE_CLIENT_TOKEN"):
-        return self.post_raw(json.dumps(payload).encode("utf-8"), token=token)
+        raw = json.dumps(payload).encode("utf-8")
+        if isinstance(payload, dict) and payload.get("method") == "initialize" \
+                and "id" in payload:
+            status, resp = self.post_raw(raw, token=token)
+            if status == 200 and isinstance(resp, dict) and "result" in resp:
+                tok = self._effective_token(token)
+                self._negotiated[tok] = resp["result"].get(
+                    "protocolVersion", PROTOCOL_VERSION)
+                self.post_raw(json.dumps({
+                    "jsonrpc": "2.0",
+                    "method": "notifications/initialized",
+                }).encode("utf-8"), token=token)
+                self._handshaken.add(tok)
+            return status, resp
+        status, resp = self.post_raw(raw, token=token)
+        tok = self._effective_token(token)
+        reason = None
+        if isinstance(resp, dict):
+            reason = (resp.get("error") or {}).get("data", {}).get("reason")
+        if status == 200 and reason == "not_initialized" \
+                and tok not in self._handshaken \
+                and isinstance(payload, dict) and "id" in payload:
+            self._handshake(token)
+            status, resp = self.post_raw(raw, token=token)
+        return status, resp
 
     def initialize(self, req_id=1, token="USE_CLIENT_TOKEN"):
-        return self.post(make_request(req_id, "initialize"), token=token)
+        return self.post({"jsonrpc": "2.0", "id": req_id,
+                          "method": "initialize",
+                          "params": initialize_params()}, token=token)
 
     def list_tools(self, req_id=1, token="USE_CLIENT_TOKEN"):
         return self.post(make_request(req_id, "tools/list"), token=token)
