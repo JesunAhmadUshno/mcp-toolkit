@@ -1,4 +1,4 @@
-"""Unit tests for Level 3 Deep: authenticated HTTP MCP-style server.
+"""Unit tests for Level 3 Deep: authenticated HTTP MCP server.
 
 Starts the real HTTP server on an ephemeral localhost port and calls
 it over HTTP. Hand-computed expectations.
@@ -79,8 +79,10 @@ class TestDeepHttp(unittest.TestCase):
         status, payload = self.reader.initialize(1)
         self.assertEqual(status, 200)
         self.assertEqual(payload["result"]["role"], "reader")
-        self.assertEqual(payload["result"]["protocolVersion"], "deep-1")
+        self.assertEqual(payload["result"]["protocolVersion"], "2025-11-25")
         self.assertEqual(payload["result"]["transport"], "http")
+        self.assertEqual(payload["result"]["serverInfo"]["name"],
+                         "mcp-toolkit-deep")
 
     def test_tools_list_filtered_by_role(self):
         _, payload = self.reader.list_tools(1)
@@ -110,35 +112,37 @@ class TestDeepHttp(unittest.TestCase):
         status, payload = self.reader.call_tool(
             1, "read_file", {"path": "hello.txt"})
         self.assertEqual(status, 200)
-        self.assertEqual(payload["result"],
+        self.assertEqual(payload["result"]["structuredContent"],
                          {"path": "hello.txt", "content": "hello mcp\n"})
+        self.assertFalse(payload["result"]["isError"])
 
     def test_list_files_success(self):
         _, payload = self.reader.call_tool(1, "list_files", {})
-        self.assertEqual(payload["result"]["files"],
+        self.assertEqual(payload["result"]["structuredContent"]["files"],
                          ["guide.txt", "hello.txt", "notes.txt"])
 
     def test_list_items_success(self):
         _, payload = self.reader.call_tool(1, "list_items", {})
-        self.assertEqual([r["name"] for r in payload["result"]["rows"]],
+        rows = payload["result"]["structuredContent"]["rows"]
+        self.assertEqual([r["name"] for r in rows],
                          ["alpha", "beta", "gamma"])
 
     def test_run_query_success(self):
         _, payload = self.reader.call_tool(1, "run_query", {
             "sql": "SELECT name, score FROM items WHERE score >= 20 ORDER BY id"})
-        self.assertEqual(payload["result"]["rows"],
+        self.assertEqual(payload["result"]["structuredContent"]["rows"],
                          [{"name": "beta", "score": 20},
                           {"name": "gamma", "score": 30}])
 
     def test_calculate_success_operator(self):
         _, payload = self.operator.call_tool(
             1, "calculate", {"op": "add", "a": 20, "b": 30})
-        self.assertEqual(payload["result"]["value"], 50)
+        self.assertEqual(payload["result"]["structuredContent"]["value"], 50)
 
     def test_count_words_success_operator(self):
         _, payload = self.operator.call_tool(
             1, "count_words", {"text": "tools need rules"})
-        self.assertEqual(payload["result"]["count"], 3)
+        self.assertEqual(payload["result"]["structuredContent"]["count"], 3)
 
     def test_reader_calculate_forbidden_role(self):
         status, payload = self.reader.call_tool(
@@ -154,48 +158,63 @@ class TestDeepHttp(unittest.TestCase):
         self.assertEqual(payload["error"]["data"]["reason"],
                          "forbidden_role")
 
+    # Safety refusals and tool execution failures are tool results
+    # with isError set (MCP tools page), so their named reason rides
+    # in structuredContent, not in a protocol error object.
     def test_path_traversal_blocked(self):
         for path in ("../secret.txt", "../../etc/passwd", "a/../../secret.txt"):
             _, payload = self.operator.call_tool(
                 1, "read_file", {"path": path})
-            self.assertEqual(payload["error"]["data"]["reason"],
-                             "path_traversal", path)
+            self.assertTrue(payload["result"]["isError"], path)
+            self.assertEqual(
+                payload["result"]["structuredContent"]["reason"],
+                "path_traversal", path)
 
     def test_absolute_path_blocked(self):
         _, payload = self.reader.call_tool(
             1, "read_file", {"path": "/etc/passwd"})
-        self.assertEqual(payload["error"]["data"]["reason"],
-                         "absolute_path_blocked")
+        self.assertEqual(
+            payload["result"]["structuredContent"]["reason"],
+            "absolute_path_blocked")
 
     def test_write_attempt_blocked(self):
         _, payload = self.operator.call_tool(
             1, "write_file", {"path": "hello.txt", "content": "x"})
-        self.assertEqual(payload["error"]["data"]["reason"], "write_blocked")
+        self.assertEqual(
+            payload["result"]["structuredContent"]["reason"],
+            "write_blocked")
 
     def test_delete_attempt_blocked(self):
         _, payload = self.operator.call_tool(
             1, "delete_file", {"path": "hello.txt"})
-        self.assertEqual(payload["error"]["data"]["reason"], "delete_blocked")
+        self.assertEqual(
+            payload["result"]["structuredContent"]["reason"],
+            "delete_blocked")
         _, payload = self.reader.call_tool(
             2, "read_file", {"path": "hello.txt"})
-        self.assertEqual(payload["result"]["content"], "hello mcp\n")
+        self.assertEqual(
+            payload["result"]["structuredContent"]["content"],
+            "hello mcp\n")
 
     def test_sql_not_select_blocked(self):
         for sql in ("DROP TABLE items", "DELETE FROM items WHERE id = 1",
                     "UPDATE items SET score = 0 WHERE id = 1",
                     "INSERT INTO items VALUES (4, 'delta', 40)"):
             _, payload = self.reader.call_tool(1, "run_query", {"sql": sql})
-            self.assertEqual(payload["error"]["data"]["reason"],
-                             "sql_not_select", sql)
+            self.assertEqual(
+                payload["result"]["structuredContent"]["reason"],
+                "sql_not_select", sql)
         _, payload = self.reader.call_tool(2, "list_items", {})
-        self.assertEqual(len(payload["result"]["rows"]), 3)
+        self.assertEqual(
+            len(payload["result"]["structuredContent"]["rows"]), 3)
 
     def test_sql_multi_statement_blocked(self):
         for sql in ("SELECT id FROM items; SELECT id FROM items",
                     "SELECT id FROM items; DROP TABLE items"):
             _, payload = self.reader.call_tool(1, "run_query", {"sql": sql})
-            self.assertEqual(payload["error"]["data"]["reason"],
-                             "sql_multi_statement", sql)
+            self.assertEqual(
+                payload["result"]["structuredContent"]["reason"],
+                "sql_multi_statement", sql)
 
     def test_oversize_request_blocked(self):
         body = json.dumps(make_request(1, "tools/call", {
@@ -207,19 +226,26 @@ class TestDeepHttp(unittest.TestCase):
                          "request_too_large")
 
     def test_unknown_tool_blocked(self):
+        # The attempt is audited as a safety event; on the wire an
+        # unknown tool is a protocol error (invalid params).
         _, payload = self.operator.call_tool(1, "frobnicate", {})
+        self.assertEqual(payload["error"]["code"], -32602)
         self.assertEqual(payload["error"]["data"]["reason"], "unknown_tool")
 
     def test_file_not_found_error(self):
         _, payload = self.reader.call_tool(
             1, "read_file", {"path": "missing.txt"})
-        self.assertEqual(payload["error"]["data"]["reason"],
-                         "file_not_found")
+        self.assertTrue(payload["result"]["isError"])
+        self.assertEqual(
+            payload["result"]["structuredContent"]["reason"],
+            "file_not_found")
 
     def test_divide_by_zero_error(self):
         _, payload = self.operator.call_tool(
             1, "calculate", {"op": "divide", "a": 1, "b": 0})
-        self.assertEqual(payload["error"]["data"]["reason"], "calc_error")
+        self.assertTrue(payload["result"]["isError"])
+        self.assertEqual(
+            payload["result"]["structuredContent"]["reason"], "calc_error")
 
     def test_unknown_method_error(self):
         _, payload = self.operator.post(make_request(1, "bogus/method"))

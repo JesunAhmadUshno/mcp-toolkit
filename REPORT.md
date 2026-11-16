@@ -48,7 +48,7 @@ Ship state, 2026-11-05: all three levels DONE, release v1.0.
 
 The call tables are deterministic correctness traces of protocol calls, not performance benchmarks. A separate small localhost latency measurement, machine specific and not deterministic, follows the guard corpus at the end of this section.
 
-Measured 2026-11-05 with level-1-learn/run_learn.py on the Muse VM, Python 3.12. The implementation is an in-process MCP-style teaching protocol, not the official MCP SDK.
+Measured 2026-11-05 with level-1-learn/run_learn.py on the Muse VM, Python 3.12. The implementation is an in-process teaching implementation of the MCP specification (protocol version 2025-11-25; see CONFORMANCE.md), not the official MCP SDK.
 
 | Test | Result |
 | --- | --- |
@@ -60,7 +60,7 @@ Measured 2026-11-05 with level-1-learn/run_learn.py on the Muse VM, Python 3.12.
 | Unit tests | 17 passed |
 | Determinism | results_learn.json identical across two runs (hash verified) |
 
-Measured 2026-11-05 with level-2-build/run_build.py on the Muse VM, Python 3.12. The Build implementation is an MCP-style protocol over stdio subprocess transport, not the official MCP SDK.
+Measured 2026-11-05 with level-2-build/run_build.py on the Muse VM, Python 3.12. The Build implementation is an implementation of the MCP specification (protocol version 2025-11-25; see CONFORMANCE.md) over stdio subprocess transport, not the official MCP SDK.
 
 Main claim: P09 mcp-toolkit Level 2 Build ran 24 protocol calls end to end over stdio subprocess transport with 14 successes, 4 blocked, and 6 errors, aggregating 6 tools across 3 servers.
 
@@ -75,7 +75,7 @@ Main claim: P09 mcp-toolkit Level 2 Build ran 24 protocol calls end to end over 
 | Build unit tests | 20 passed (37 in the full suite) |
 | Determinism | results_build.json identical across two runs, sha256 6e56a8d61e38 |
 
-Measured 2026-11-05 with level-3-deep/run_deep.py on the Muse VM, Python 3.12. The Deep implementation is an MCP-style protocol over real HTTP on localhost with bearer token authentication, not the official MCP SDK.
+Measured 2026-11-05 with level-3-deep/run_deep.py on the Muse VM, Python 3.12. The Deep implementation is an implementation of the MCP specification (protocol version 2025-11-25; see CONFORMANCE.md) over real HTTP on localhost with bearer token authentication, not the official MCP SDK.
 
 Main claim: P09 mcp-toolkit Level 3 Deep ran 30 protocol calls over authenticated HTTP with 8 successes, 3 unauthenticated rejections, 2 role blocks, 13 safety blocks, and 4 errors, exposing 6 tools under 2 roles.
 
@@ -163,7 +163,7 @@ Moved from docs/research-review.md. The letter grades were removed
 | Baselines | No baseline. PROPOSAL.md (Proposed novelty) says NO MEASUREMENT YET against the MCP reference servers. |
 | Statistics and uncertainty | Correctness traces are deterministic, so variance does not apply to them. The guard corpus reports counts, not rates, and says so. The latency run (results_latency.json) reports median and p95 over 300 calls per kind, one machine, one run, no confidence intervals. |
 | Reproducibility | Stdlib Python only; .github/workflows/ci.yml runs 71 unit tests, all three runners and the guard corpus, then fails if any committed results file changes. The site rebuilds from the same files and its build fails unless the JavaScript guard port agrees with the recorded runs and the corpus verdicts (site/src/guard.check.mjs). |
-| Threats to validity | Failure modes are written per level and the README states scope (MCP-style, localhost, no TLS). A threat model is added below; it was missing before this review. |
+| Threats to validity | Failure modes are written per level and the README states scope (localhost, no TLS). A threat model is added below; it was missing before this review. |
 | Related work | PROPOSAL.md names the prior art (the MCP reference servers) but compare nothing against it. |
 | Limitations | Each level README itemizes its known limits, largest first, and the Deep README lists its failure modes; the site build fails if those sections go missing. |
 | Engineering rigor | 71 tests pass in under 2 s; tests check README counts against results JSON (tests/test_results_consistency.py). Gaps: no fuzzing, no query timeout or row cap, size cap trusts Content-Length. |
@@ -183,7 +183,7 @@ Fixed during that review:
 
 | Gap | What closes it | Compute and data needed |
 | --- | --- | --- |
-| No interop evidence (Future work 4) | Connect the official MCP Python SDK client to a server built on the same tools; record which messages match and which do not. | One CPU machine, the official SDK installed from PyPI, about a day of work. No GPU, no paid API. |
+| No SDK interop evidence (Future work 4) | Conformance to the written specification is verified (CONFORMANCE.md, v1.1). What remains: connect the official MCP Python SDK client to a server built on the same tools; record which messages match and which do not. | One CPU machine, the official SDK installed from PyPI, about a day of work. No GPU, no paid API. |
 | No baseline against the MCP reference servers | Run the same 30-call Deep plan against a reference filesystem and sqlite server through the official SDK; compare outcomes and refusal reasons. | Same as above, plus the reference servers from the MCP project; CPU only. |
 | Guard evaluated on 39 hand-picked cases | A larger labelled corpus (several hundred benign queries from a public SQL workload plus known injection payloads), with rates and confidence intervals. | A public SQL query set and an injection payload list; labelling time; seconds of CPU. |
 | SQL guard is a heuristic (Future work 5) | Replace with sqlite set_authorizer plus a progress-handler timeout and row cap; rerun the corpus and compare counts. | CPU only, stdlib sqlite3. |
@@ -203,7 +203,7 @@ Named here at the v1.0 ship, per the December compression protocol. None of this
 1. TLS termination: a documented way to serve the HTTP endpoint behind TLS, so bearer tokens never cross a network in clear text. Localhost-only stays the default.
 2. Token lifecycle: expiry, rotation, and revocation for token hashes, plus per-caller identities beyond the two fixed roles.
 3. Durable audit log: append-only on-disk audit entries with the same categories and reasons, surviving server restarts.
-4. Official MCP interop: connect a real MCP client and the official MCP SDK to this server shape and record what matches and what does not, instead of claiming compliance.
+4. Official MCP interop: conformance to the written specification is verified (CONFORMANCE.md, v1.1); what remains is to connect a real MCP client and the official MCP SDK to this server shape and record what matches and what does not.
 5. Stronger SQL safety: a real SQL parser or a sqlite authorizer in place of the first-word and token check, plus a query timeout and a row cap for permitted SELECT calls.
 6. Server hardening: request timeouts, rate limiting and authentication throttling, a streaming body size cap that does not trust the declared Content-Length, and request ids correlated across the audit log.
 7. Resources over HTTP: resources/read for sandbox and database resources, which Build has over stdio and Deep does not expose yet.

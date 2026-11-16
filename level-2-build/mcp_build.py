@@ -1,8 +1,13 @@
-"""MCP-style tool protocol, Build level: real stdio transport.
+"""Model Context Protocol tool server, Build level: real stdio transport.
 
-This is a stdlib-only MCP-style implementation. It is not the official
-MCP SDK and claims no spec compliance beyond the message shapes it
-documents. Build adds, over the in-process Learn level:
+This is a stdlib-only implementation of the MCP specification
+(protocol version 2025-11-25, with negotiation back to 2024-11-05)
+over the specification's stdio transport. It is not the official MCP
+SDK. Tool execution outcomes, including the named safety refusals,
+are returned as tool results with isError set, as the specification's
+tools page prescribes; protocol problems are JSON-RPC errors.
+Conformance evidence: CONFORMANCE.md and tests/test_mcp_conformance.py
+at the repository root. Build adds, over the in-process Learn level:
 
 - Real transport: each server runs as a separate subprocess and speaks
   newline-delimited JSON (NDJSON) JSON-RPC style messages over stdio.
@@ -24,17 +29,19 @@ import sqlite3
 import subprocess
 import sys
 
-PROTOCOL_VERSION = "build-1"
+# MCP specification versions this server can negotiate, newest first.
+SUPPORTED_PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18",
+                               "2025-03-26", "2024-11-05")
+PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSIONS[0]
+SERVER_INFO_VERSION = "1.1"
 
+ERR_PARSE = -32700
 ERR_INVALID_REQUEST = -32600
 ERR_METHOD_NOT_FOUND = -32601
 ERR_INVALID_PARAMS = -32602
-ERR_TOOL_NOT_FOUND = -32001
-ERR_SANDBOX_BLOCKED = -32002
-ERR_WRITE_BLOCKED = -32003
+ERR_INTERNAL = -32603
+ERR_RESOURCE_NOT_FOUND = -32002
 ERR_NOT_FOUND = -32004
-ERR_QUERY = -32005
-ERR_CALC = -32006
 ERR_SERVER = -32007
 
 
@@ -46,6 +53,51 @@ def error_response(req_id, code, message, reason):
 
 def ok_response(req_id, result):
     return {"jsonrpc": "2.0", "id": req_id, "result": result}
+
+
+def negotiate_version(params):
+    """MCP version negotiation: echo a supported version the client
+    asked for; otherwise answer with the newest version supported."""
+    requested = params.get("protocolVersion")
+    if requested in SUPPORTED_PROTOCOL_VERSIONS:
+        return requested
+    return PROTOCOL_VERSION
+
+
+def tool_result(req_id, payload):
+    """A successful CallToolResult: the payload as structuredContent
+    plus its JSON serialization as a text content block."""
+    return ok_response(req_id, {
+        "content": [{"type": "text",
+                     "text": json.dumps(payload, sort_keys=True)}],
+        "structuredContent": payload,
+        "isError": False})
+
+
+def tool_error(req_id, reason, message):
+    """A tool execution error, reported in band as the specification
+    prescribes: a result with isError true, the message as text
+    content, and the toolkit's named reason as structuredContent."""
+    return ok_response(req_id, {
+        "content": [{"type": "text", "text": message}],
+        "structuredContent": {"reason": reason},
+        "isError": True})
+
+
+def initialize_params():
+    """The initialize params a spec-conforming client sends."""
+    return {"protocolVersion": PROTOCOL_VERSION, "capabilities": {},
+            "clientInfo": {"name": "mcp-toolkit-host",
+                           "version": SERVER_INFO_VERSION}}
+
+
+def make_initialize_request(req_id):
+    return {"jsonrpc": "2.0", "id": req_id, "method": "initialize",
+            "params": initialize_params()}
+
+
+def make_initialized_notification():
+    return {"jsonrpc": "2.0", "method": "notifications/initialized"}
 
 
 def make_request(req_id, method, params=None):
@@ -73,40 +125,87 @@ BLOCKED_SQL_WORDS = {"INSERT", "UPDATE", "DELETE", "DROP", "ALTER",
 class BaseServer:
     name = "base"
     tools = []
+    # Lifecycle state (specification, Lifecycle): a fresh server has
+    # not been initialized; it becomes ready when the client sends
+    # notifications/initialized after the initialize exchange.
+    _initialized = False
+    _ready = False
 
     def handle(self, request):
-        req_id = request.get("id") if isinstance(request, dict) else None
+        """Route one message. Returns a response dict, or None for a
+        notification: the base protocol forbids answering one."""
+        if isinstance(request, list):
+            return error_response(
+                None, ERR_INVALID_REQUEST,
+                "invalid request: JSON-RPC batching is not part of MCP",
+                "invalid_request")
+        if not isinstance(request, dict):
+            return error_response(None, ERR_INVALID_REQUEST,
+                                  "invalid request", "invalid_request")
+        is_notification = "id" not in request
+        req_id = request.get("id")
+        if not is_notification and req_id is None:
+            return error_response(None, ERR_INVALID_REQUEST,
+                                  "request id must not be null",
+                                  "invalid_request")
+        method = request.get("method")
+        if not isinstance(method, str):
+            if is_notification:
+                return None
+            return error_response(req_id, ERR_INVALID_REQUEST,
+                                  "invalid request", "invalid_request")
+        if is_notification:
+            if method == "notifications/initialized":
+                self._ready = True
+            return None
+        if request.get("jsonrpc") != "2.0":
+            return error_response(req_id, ERR_INVALID_REQUEST,
+                                  "jsonrpc must be \"2.0\"",
+                                  "invalid_request")
+        params = request.get("params") or {}
+        if not isinstance(params, dict):
+            return error_response(req_id, ERR_INVALID_PARAMS,
+                                  "params must be an object",
+                                  "invalid_params")
         try:
-            if not isinstance(request, dict) or "method" not in request:
-                return error_response(req_id, ERR_INVALID_REQUEST,
-                                      "invalid request", "invalid_request")
-            method = request["method"]
-            params = request.get("params") or {}
-            if not isinstance(params, dict):
-                return error_response(req_id, ERR_INVALID_PARAMS,
-                                      "params must be an object",
-                                      "invalid_params")
             if method == "initialize":
+                self._initialized = True
                 return ok_response(req_id, {
-                    "protocolVersion": PROTOCOL_VERSION,
+                    "protocolVersion": negotiate_version(params),
+                    "capabilities": {"tools": {}, "resources": {}},
+                    "serverInfo": {
+                        "name": "mcp-toolkit-" + self.name,
+                        "version": SERVER_INFO_VERSION},
                     "server": self.name,
-                    "transport": "stdio",
-                    "capabilities": {"tools": True, "resources": True}})
+                    "transport": "stdio"})
+            if method == "ping":
+                return ok_response(req_id, {})
+            if not self._ready:
+                return error_response(
+                    req_id, ERR_INVALID_REQUEST,
+                    "server not initialized: send initialize, then "
+                    "notifications/initialized", "not_initialized")
             if method == "tools/list":
                 return ok_response(req_id, {"tools": self.tools})
             if method == "tools/call":
                 return self._call_tool(req_id, params)
+            if method == "resources/list":
+                return self._list_resources(req_id, params)
             if method == "resources/read":
                 return self._read_resource(req_id, params)
             return error_response(req_id, ERR_METHOD_NOT_FOUND,
                                   "method not found", "method_not_found")
         except Exception as exc:
-            return error_response(req_id, ERR_QUERY,
+            return error_response(req_id, ERR_INTERNAL,
                                   "internal error: " + type(exc).__name__,
                                   "internal_error")
 
     def _call_tool(self, req_id, params):
         raise NotImplementedError
+
+    def _list_resources(self, req_id, params):
+        return error_response(req_id, ERR_METHOD_NOT_FOUND,
+                              "method not found", "method_not_found")
 
     def _read_resource(self, req_id, params):
         return error_response(req_id, ERR_METHOD_NOT_FOUND,
@@ -117,7 +216,7 @@ class BaseServer:
         args = params.get("arguments")
         if name not in allowed:
             return None, None, error_response(
-                req_id, ERR_TOOL_NOT_FOUND, "unknown tool", "tool_not_found")
+                req_id, ERR_INVALID_PARAMS, "unknown tool", "tool_not_found")
         if not isinstance(args, dict):
             return None, None, error_response(
                 req_id, ERR_INVALID_PARAMS, "arguments must be an object",
@@ -158,7 +257,8 @@ class FileServer(BaseServer):
         if err:
             return err
         if name == "list_files":
-            return ok_response(req_id, {"files": sorted(os.listdir(self.sandbox))})
+            return tool_result(req_id,
+                               {"files": sorted(os.listdir(self.sandbox))})
         path = args.get("path")
         if not isinstance(path, str) or not path:
             return error_response(req_id, ERR_INVALID_PARAMS,
@@ -166,13 +266,18 @@ class FileServer(BaseServer):
                                   "invalid_params")
         target = self._resolve(path)
         if target is None:
-            return error_response(req_id, ERR_SANDBOX_BLOCKED,
-                                  "path outside sandbox", "path_traversal")
+            return tool_error(req_id, "path_traversal",
+                              "path outside sandbox")
         if not os.path.isfile(target):
-            return error_response(req_id, ERR_NOT_FOUND,
-                                  "file not found", "file_not_found")
+            return tool_error(req_id, "file_not_found", "file not found")
         with open(target, encoding="utf-8") as f:
-            return ok_response(req_id, {"path": path, "content": f.read()})
+            return tool_result(req_id, {"path": path, "content": f.read()})
+
+    def _list_resources(self, req_id, params):
+        resources = [{"uri": "sandbox://" + name, "name": name,
+                      "mimeType": "text/plain"}
+                     for name in sorted(os.listdir(self.sandbox))]
+        return ok_response(req_id, {"resources": resources})
 
     def _read_resource(self, req_id, params):
         uri = params.get("uri")
@@ -182,13 +287,15 @@ class FileServer(BaseServer):
                                   "invalid_params")
         target = self._resolve(uri[len("sandbox://"):])
         if target is None:
-            return error_response(req_id, ERR_SANDBOX_BLOCKED,
+            return error_response(req_id, ERR_RESOURCE_NOT_FOUND,
                                   "path outside sandbox", "path_traversal")
         if not os.path.isfile(target):
-            return error_response(req_id, ERR_NOT_FOUND,
-                                  "file not found", "file_not_found")
+            return error_response(req_id, ERR_RESOURCE_NOT_FOUND,
+                                  "resource not found", "resource_not_found")
         with open(target, encoding="utf-8") as f:
-            return ok_response(req_id, {"uri": uri, "text": f.read()})
+            text = f.read()
+        return ok_response(req_id, {"contents": [{
+            "uri": uri, "mimeType": "text/plain", "text": text}]})
 
 
 class DatabaseServer(BaseServer):
@@ -235,7 +342,7 @@ class DatabaseServer(BaseServer):
         if err:
             return err
         if name == "list_items":
-            return ok_response(req_id, {
+            return tool_result(req_id, {
                 "rows": self._rows("SELECT id, name, score FROM items ORDER BY id")})
         sql = args.get("sql")
         if not isinstance(sql, str) or not sql.strip():
@@ -243,24 +350,30 @@ class DatabaseServer(BaseServer):
                                   "sql must be a non-empty string",
                                   "invalid_params")
         if self._check_sql(sql) is not None:
-            return error_response(req_id, ERR_WRITE_BLOCKED,
-                                  "only read-only SELECT is allowed",
-                                  "write_blocked")
+            return tool_error(req_id, "write_blocked",
+                              "only read-only SELECT is allowed")
         try:
             rows = self._rows(sql)
         except sqlite3.Error as exc:
-            return error_response(req_id, ERR_QUERY,
-                                  "query error: " + str(exc), "query_error")
-        return ok_response(req_id, {"rows": rows})
+            return tool_error(req_id, "query_error",
+                              "query error: " + str(exc))
+        return tool_result(req_id, {"rows": rows})
+
+    def _list_resources(self, req_id, params):
+        return ok_response(req_id, {"resources": [{
+            "uri": "db://items", "name": "items",
+            "description": "Every row of the items table.",
+            "mimeType": "application/json"}]})
 
     def _read_resource(self, req_id, params):
         uri = params.get("uri")
         if uri != "db://items":
-            return error_response(req_id, ERR_NOT_FOUND,
+            return error_response(req_id, ERR_RESOURCE_NOT_FOUND,
                                   "resource not found", "resource_not_found")
-        return ok_response(req_id, {
-            "uri": uri,
-            "rows": self._rows("SELECT id, name, score FROM items ORDER BY id")})
+        rows = self._rows("SELECT id, name, score FROM items ORDER BY id")
+        return ok_response(req_id, {"contents": [{
+            "uri": uri, "mimeType": "application/json",
+            "text": json.dumps({"rows": rows}, sort_keys=True)}]})
 
 
 class CalcServer(BaseServer):
@@ -290,7 +403,7 @@ class CalcServer(BaseServer):
             if not isinstance(text, str):
                 return error_response(req_id, ERR_INVALID_PARAMS,
                                       "text must be a string", "invalid_params")
-            return ok_response(req_id, {"count": len(text.split())})
+            return tool_result(req_id, {"count": len(text.split())})
         op, a, b = args.get("op"), args.get("a"), args.get("b")
         if op not in ("add", "subtract", "multiply", "divide"):
             return error_response(req_id, ERR_INVALID_PARAMS,
@@ -308,18 +421,24 @@ class CalcServer(BaseServer):
             value = a * b
         else:
             if b == 0:
-                return error_response(req_id, ERR_CALC,
-                                      "division by zero", "calc_error")
+                return tool_error(req_id, "calc_error", "division by zero")
             value = a / b
-        return ok_response(req_id, {"op": op, "a": a, "b": b, "value": value})
+        return tool_result(req_id, {"op": op, "a": a, "b": b, "value": value})
+
+    def _list_resources(self, req_id, params):
+        return ok_response(req_id, {"resources": [{
+            "uri": "calc://ops", "name": "ops",
+            "description": "The arithmetic operations calculate accepts.",
+            "mimeType": "application/json"}]})
 
     def _read_resource(self, req_id, params):
         if params.get("uri") != "calc://ops":
-            return error_response(req_id, ERR_NOT_FOUND,
+            return error_response(req_id, ERR_RESOURCE_NOT_FOUND,
                                   "resource not found", "resource_not_found")
-        return ok_response(req_id, {"uri": "calc://ops",
-                                     "ops": ["add", "subtract",
-                                             "multiply", "divide"]})
+        ops = ["add", "subtract", "multiply", "divide"]
+        return ok_response(req_id, {"contents": [{
+            "uri": "calc://ops", "mimeType": "application/json",
+            "text": json.dumps({"ops": ops}, sort_keys=True)}]})
 
 
 def write_fixtures(sandbox_dir):
@@ -341,7 +460,9 @@ def make_server(kind, sandbox_dir=None):
 
 
 def serve_stdio(server, instream=None, outstream=None):
-    """NDJSON loop: one JSON request per input line, one response per line."""
+    """NDJSON loop: one JSON-RPC message per input line. Requests get
+    one response line each; notifications get none, as the base
+    protocol requires. Unparseable input gets a -32700 parse error."""
     instream = instream or sys.stdin
     outstream = outstream or sys.stdout
     for line in instream:
@@ -351,20 +472,38 @@ def serve_stdio(server, instream=None, outstream=None):
         try:
             request = json.loads(line)
         except ValueError:
-            response = error_response(None, ERR_INVALID_REQUEST,
-                                      "invalid json", "invalid_request")
+            response = error_response(None, ERR_PARSE,
+                                      "parse error", "parse_error")
         else:
             response = server.handle(request)
+        if response is None:
+            continue
         outstream.write(json.dumps(response, sort_keys=True) + "\n")
         outstream.flush()
 
 
 class InProcessHost:
-    """Learn path kept working: same server classes, no subprocess."""
+    """Learn path kept working: same server classes, no subprocess.
+
+    Like a real MCP host, it completes the lifecycle handshake with
+    each server (initialize, then notifications/initialized) before
+    the first ordinary request to that server.
+    """
 
     def __init__(self, servers):
         self.servers = {s.name: s for s in servers}
         self._tool_owner = {}
+        self._handshaken = set()
+        self._handshake_id = 100000
+
+    def _ensure_handshake(self, server_name):
+        if server_name in self._handshaken:
+            return
+        server = self.servers[server_name]
+        self._handshake_id += 1
+        server.handle(make_initialize_request(self._handshake_id))
+        server.handle(make_initialized_notification())
+        self._handshaken.add(server_name)
 
     def handle(self, server_name, request):
         server = self.servers.get(server_name)
@@ -372,12 +511,18 @@ class InProcessHost:
             req_id = request.get("id") if isinstance(request, dict) else None
             return error_response(req_id, ERR_NOT_FOUND,
                                   "unknown server", "server_not_found")
+        if isinstance(request, dict) and request.get("method") == "initialize":
+            response = server.handle(request)
+            server.handle(make_initialized_notification())
+            self._handshaken.add(server_name)
+            return response
+        self._ensure_handshake(server_name)
         return server.handle(request)
 
     def list_tools(self):
         agg = []
         for name in sorted(self.servers):
-            resp = self.servers[name].handle(make_request(0, "tools/list"))
+            resp = self.handle(name, make_request(0, "tools/list"))
             for tool in resp["result"]["tools"]:
                 agg.append(tool)
                 self._tool_owner[tool["name"]] = name
@@ -413,8 +558,16 @@ class StdioConnection:
         self.proc = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, encoding="utf-8")
+        self._handshaken = False
+        self._handshake_id = 100000
 
-    def request(self, request):
+    def notify(self, request):
+        """Write one notification. Notifications are never answered,
+        so nothing is read back."""
+        self.proc.stdin.write(json.dumps(request) + "\n")
+        self.proc.stdin.flush()
+
+    def _roundtrip(self, request):
         req_id = request.get("id") if isinstance(request, dict) else None
         if self.proc.poll() is not None:
             return error_response(req_id, ERR_SERVER,
@@ -434,6 +587,29 @@ class StdioConnection:
         except ValueError:
             return error_response(req_id, ERR_SERVER,
                                   "server sent invalid json", "server_error")
+
+    def _handshake(self):
+        self._handshake_id += 1
+        self._roundtrip(make_initialize_request(self._handshake_id))
+        try:
+            self.notify(make_initialized_notification())
+        except (BrokenPipeError, OSError):
+            pass
+        self._handshaken = True
+
+    def request(self, request):
+        method = request.get("method") if isinstance(request, dict) else None
+        if method == "initialize":
+            response = self._roundtrip(request)
+            try:
+                self.notify(make_initialized_notification())
+            except (BrokenPipeError, OSError):
+                pass
+            self._handshaken = True
+            return response
+        if not self._handshaken:
+            self._handshake()
+        return self._roundtrip(request)
 
     def close(self):
         try:
